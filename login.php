@@ -1,7 +1,6 @@
 <?php
 session_start();
-require('koneksi.php');
-
+require "config/koneksi.php";
 $error_message = "";
 
 if (isset($_POST['submit'])) {

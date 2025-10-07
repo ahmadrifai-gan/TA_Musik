@@ -1,5 +1,5 @@
 <?php
-require('koneksi.php');
+require("config/koneksi.php");
 
 if (isset($_POST['register'])) {
     $email    = trim($_POST['txt_email']);
