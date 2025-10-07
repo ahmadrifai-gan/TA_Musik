@@ -54,7 +54,17 @@ session_start();
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
               <li><a class="dropdown-item" href="riwayat_reservasi.php">Riwayat Reservasi</a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="logout.php">Logout</a></li>
+              <li>
+  <a class="dropdown-item" href="javascript:void(0);" onclick="confirmLogout()">Logout</a>
+</li>
+<script>
+  function confirmLogout() {
+    if (confirm("Apakah Anda yakin ingin logout?")) {
+      window.location.href = "logout.php";
+    }
+  }
+</script>
+
             </ul>
           </div>
           <?php else: ?>
@@ -154,15 +164,15 @@ session_start();
                 <h3 class="h5">Studio B — Studio Bronze</h3>
                 <p class="text-secondary">Ruang live untuk band full, drum tracking, dan live session video.</p>
                 <ul class="list-inline text-secondary small mb-3">
-                  <li class="list-inline-item">Drum: Maple Custom</li>
-                  <li class="list-inline-item">Mic: SM7B, e609, D112</li>
-                  <li class="list-inline-item">Monitoring: In‑ear & wedges</li>
+                  <li class="list-inline-item">All Include Fullset</li>
                 </ul>
-                <a class="btn btn-outline-secondary btn-sm" href="#booking" data-open-booking data-studio="Studio B">Booking</a>
-              </div>
+                  <p>- Reguler = 50K/jam<br>
+           - Paket 2 jam = 90K<br>
+           - Paket 3 jam = 130K</p>
+        <a href="booking.php?studio=gold" class="btn btn-outline-primary">Booking</a>
+      </div>
             </div>
           </div>
-        </div>
       </div>
     </section>
 
