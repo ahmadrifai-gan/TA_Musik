@@ -81,12 +81,12 @@ session_start();
       <div class="container-fluid px-3 px-md-5 py-4">
         <div class="row align-items-center g-4">
           <div class="col-lg-7">
-            <p class="text-uppercase small text-secondary fw-bold mb-2">Premium Rehearsal</p>
+            <p class="text-uppercase small text-secondary fw-bold mb-2">WELCOME</p>
             <h1 class="display-3 fw-bold lh-sm" style="font-family:'Playfair Display', Georgia, serif;">Studio Latihan Musik<br/>dengan Akustik &<br/>Fasilitas Terbaik</h1>
             <p class="text-secondary">Ruang latihan dengan akustik terkontrol, peralatan musik berkualitas, dan suasana nyaman untuk band maupun solo.</p>
             <div class="d-flex flex-wrap gap-2 my-3">
-              <a class="btn btn-dark btn-lg rounded-pill" href="#booking" data-open-booking>Booking Now</a>
-              <a class="btn btn-outline-secondary btn-lg rounded-pill" href="#studios">Lihat Studio & Jadwal</a>
+              <a class="btn btn-warning btn-lg rounded-pill" href="#booking" data-open-booking>Booking Now</a>
+              <a class="btn btn-outline-warning btn-lg rounded-pill" href="#studios">Lihat Studio & Jadwal</a>
             </div>
             <ul class="list-inline text-secondary mb-0">
               <li class="list-inline-item">24/7</li>
@@ -123,18 +123,14 @@ session_start();
     <!-- Services -->
     <section id="services" class="py-5" aria-labelledby="services-title">
       <div class="container-fluid px-3 px-md-5">
-        <header class="text-center mb-4">
-          <p class="text-uppercase small text-primary fw-bold">Apa yang kami tawarkan</p>
-          <h2 id="services-title" class="fw-bold">Layanan Profesional</h2>
-          <p class="text-secondary">Solusi lengkap untuk musisi, podcaster, dan content creator.</p>
-        </header>
-        <div class="row row-cols-1 row-cols-md-3 g-3">
-          <div class="col"><div class="card h-100 shadow-lg rounded-4"><div class="card-body"><div class="fs-4">🎙️</div><h3 class="h5 mt-2">Recording</h3><p class="text-secondary mb-0">Vokal, instrumen, voice-over, hingga orkestrasi. Akustik terkontrol, preamp kelas atas.</p></div></div></div>
-          <div class="col"><div class="card h-100 shadow-lg rounded-4"><div class="card-body"><div class="fs-4">🎚️</div><h3 class="h5 mt-2">Mixing & Mastering</h3><p class="text-secondary mb-0">Racik sonik profesional untuk rilis radio dan digital platform.</p></div></div></div>
-          <div class="col"><div class="card h-100 shadow-lg rounded-4"><div class="card-body"><div class="fs-4">🥁</div><h3 class="h5 mt-2">Rehearsal</h3><p class="text-secondary mb-0">Ruang latihan kedap suara dengan monitoring jelas dan drum kit premium.</p></div></div></div>
-          <div class="col"><div class="card h-100 shadow-lg rounded-4"><div class="card-body"><div class="fs-4">📻</div><h3 class="h5 mt-2">Podcast</h3><p class="text-secondary mb-0">Setup multi-mic, remote guest, dan post-production cepat.</p></div></div></div>
-          <div class="col"><div class="card h-100 shadow-lg rounded-4"><div class="card-body"><div class="fs-4">🎬</div><h3 class="h5 mt-2">Live Session</h3><p class="text-secondary mb-0">Video live session multi-angle dengan lighting sinematik.</p></div></div></div>
-          <div class="col"><div class="card h-100 shadow-lg rounded-4"><div class="card-body"><div class="fs-4">🎼</div><h3 class="h5 mt-2">Produksi Musik</h3><p class="text-secondary mb-0">Komposisi, aransemen, hingga sound design untuk iklan dan film.</p></div></div></div>
+        <div class="row">
+            <div class="card h-100 shadow-lg rounded-4">
+              <div class="card-body"> 
+                <h1 class=" mt-3 mb-1 text-center">Panduan Booking</h1>
+                <p class="text-secondary mb-0">Lorem ipsum dolor sit amet consectetur adipisicing elit. Magnam quasi velit molestias amet aperiam <br> doloremque expedita tempora animi suscipit adipisci ipsum ab, ipsa eius quia laudantium excepturi et asperiores eaque nam deserunt, <br> voluptatum numquam! Nisi, eius. Delectus non officia, quia sequi molestias animi impedit laudantium, illo eveniet reprehenderit dolor fuga doloribus. Quo dicta, quod quas doloribus quos consectetur possimus delectus odit voluptates corrupti vero, dolorum labore excepturi maxime. Quam debitis est veritatis vel nulla facilis recusandae fugiat quos ex corporis hic, iste facere adipisci veniam impedit at animi eaque velit vitae repellat obcaecati eos expedita illum. Eligendi a laboriosam cum!</p>
+            </div>
+          </div>
+          
         </div>
       </div>
     </section>
@@ -143,28 +139,30 @@ session_start();
     <section id="studios" class="py-5 bg-body-secondary" aria-labelledby="studios-title">
       <div class="container-fluid px-3 px-md-5">
         <header class="text-center mb-4">
-          <p class="text-uppercase small text-primary fw-bold">Ruang yang menginspirasi</p>
-          <h2 id="studios-title" class="fw-bold">Pilih Studio Anda</h2>
+          <h2 id="studios-title" class="fw-bold">Studio & Jadwal</h2>
         </header>
         <div class="row g-3">
-          <div class="col-md-4">
-            <div class="card h-100 shadow-lg overflow-hidden rounded-4">
-              <div class="ratio ratio-16x9" role="img" aria-label="Studio A dengan konsol besar dan ambience hangat" style="background:url('https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?q=80&w=1600&auto=format&fit=crop') center/cover"></div>
-              <div class="card-body">
-                <h3 class="h5">Studio Bronze — 35Rb/Jam </h3>
-                <p class="text-secondary">Ruangan yang kedap udara dan dilengkapi dengan AC. Fasilitas : Gitar, Bass, Keyboard, Drum</p>
-                 <p>- Tanpa Keyboard = 35K/jam<br>
-           - Dengan Keyboard = 40K/jam</p>
-        <a href="booking.php?studio=bronze" class="btn btn-outline-primary">Booking</a>
-      </div>
-            </div>
-          </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="card h-100 shadow-lg overflow-hidden rounded-4">
               <div class="ratio ratio-16x9" role="img" aria-label="Studio B dengan drum kit dan dinding akustik" style="background:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1600&auto=format&fit=crop') center/cover"></div>
               <div class="card-body">
-                <h3 class="h5">Studio Gold — 5Ok/Jam</h3>
-                <p class="text-secondary">Ruangan yang kedap udara dan dilengkapi dengan AC. Fasilitas : Gitar, Bass, Keyboard, Drum</p>
+                <h3 class="h5">Studio A — Studio Gold</h3>
+                <p class="text-secondary">Ruang live untuk band full, drum tracking, dan live session video.</p>
+                <ul class="list-inline text-secondary small mb-3">
+                  <li class="list-inline-item">Drum: Maple Custom</li>
+                  <li class="list-inline-item">Mic: SM7B, e609, D112</li>
+                  <li class="list-inline-item">Monitoring: In‑ear & wedges</li>
+                </ul>
+                <a class="btn btn-outline-secondary btn-sm" href="#booking" data-open-booking data-studio="Studio B">Booking</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card h-100 shadow-lg overflow-hidden rounded-4">
+              <div class="ratio ratio-16x9" role="img" aria-label="Studio B dengan drum kit dan dinding akustik" style="background:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1600&auto=format&fit=crop') center/cover"></div>
+              <div class="card-body">
+                <h3 class="h5">Studio B — Studio Bronze</h3>
+                <p class="text-secondary">Ruang live untuk band full, drum tracking, dan live session video.</p>
                 <ul class="list-inline text-secondary small mb-3">
                   <li class="list-inline-item">All Include Fullset</li>
                 </ul>
@@ -271,24 +269,8 @@ session_start();
       </div>
     </section>
 
-    <!-- Gallery -->
-    <section id="gallery" class="py-5" aria-labelledby="gallery-title">
-      <div class="container-fluid px-3 px-md-4">
-        <header class="text-center mb-4">
-          <p class="text-uppercase small text-primary fw-bold">Suasana & vibe</p>
-          <h2 id="gallery-title" class="fw-bold">Galeri</h2>
-        </header>
-        <div class="row row-cols-2 row-cols-md-4 g-2 g-md-3">
-          <div class="col"><div class="ratio ratio-4x3 rounded-4 border shadow-sm" aria-label="Mixer dan fader" role="img" style="background:url('https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?q=80&w=1600&auto=format&fit=crop') center/cover"></div></div>
-          <div class="col"><div class="ratio ratio-4x3 rounded-4 border shadow-sm" aria-label="Mikrofon kondensor" role="img" style="background:url('https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?q=80&w=1600&auto=format&fit=crop') center/cover;filter:hue-rotate(20deg) saturate(110%)"></div></div>
-          <div class="col"><div class="ratio ratio-4x3 rounded-4 border shadow-sm" aria-label="Drum kit" role="img" style="background:url('https://images.unsplash.com/photo-1487180144351-b8472da7d491?q=80&w=1600&auto=format&fit=crop') center/cover"></div></div>
-          <div class="col"><div class="ratio ratio-4x3 rounded-4 border shadow-sm" aria-label="Gitar dan amp" role="img" style="background:url('https://images.unsplash.com/photo-1513863324645-8d6b3f3e2c3b?q=80&w=1600&auto=format&fit=crop') center/cover"></div></div>
-        </div>
-      </div>
-    </section>
-
     <!-- Contact -->
-    <section id="contact" class="py-5 bg-body-secondary" aria-labelledby="contact-title">
+    <section id="contact" class="py-5 bg-white" aria-labelledby="contact-title">
       <div class="container-fluid px-3 px-md-4">
 
         <div class="row g-3 align-items-stretch">
