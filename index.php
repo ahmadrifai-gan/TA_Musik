@@ -54,7 +54,17 @@ session_start();
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
               <li><a class="dropdown-item" href="riwayat_reservasi.php">Riwayat Reservasi</a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="logout.php">Logout</a></li>
+              <li>
+  <a class="dropdown-item" href="javascript:void(0);" onclick="confirmLogout()">Logout</a>
+</li>
+<script>
+  function confirmLogout() {
+    if (confirm("Apakah Anda yakin ingin logout?")) {
+      window.location.href = "logout.php";
+    }
+  }
+</script>
+
             </ul>
           </div>
           <?php else: ?>
@@ -141,48 +151,30 @@ session_start();
             <div class="card h-100 shadow-lg overflow-hidden rounded-4">
               <div class="ratio ratio-16x9" role="img" aria-label="Studio A dengan konsol besar dan ambience hangat" style="background:url('https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?q=80&w=1600&auto=format&fit=crop') center/cover"></div>
               <div class="card-body">
-                <h3 class="h5">Studio A — Flagship</h3>
-                <p class="text-secondary">Ruang mixing/mastering dengan monitoring referensi, ideal untuk produksi skala penuh.</p>
-                <ul class="list-inline text-secondary small mb-3">
-                  <li class="list-inline-item">Console: SSL emulation</li>
-                  <li class="list-inline-item">Mic: U87, C414</li>
-                  <li class="list-inline-item">Monitors: ATC / Genelec</li>
-                </ul>
-                <a class="btn btn-outline-secondary btn-sm" href="#booking" data-open-booking data-studio="Studio A">Booking</a>
-              </div>
+                <h3 class="h5">Studio Bronze — 35Rb/Jam </h3>
+                <p class="text-secondary">Ruangan yang kedap udara dan dilengkapi dengan AC. Fasilitas : Gitar, Bass, Keyboard, Drum</p>
+                 <p>- Tanpa Keyboard = 35K/jam<br>
+           - Dengan Keyboard = 40K/jam</p>
+        <a href="booking.php?studio=bronze" class="btn btn-outline-primary">Booking</a>
+      </div>
             </div>
           </div>
           <div class="col-md-4">
             <div class="card h-100 shadow-lg overflow-hidden rounded-4">
               <div class="ratio ratio-16x9" role="img" aria-label="Studio B dengan drum kit dan dinding akustik" style="background:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1600&auto=format&fit=crop') center/cover"></div>
               <div class="card-body">
-                <h3 class="h5">Studio B — Live Room</h3>
-                <p class="text-secondary">Ruang live untuk band full, drum tracking, dan live session video.</p>
+                <h3 class="h5">Studio Gold — 5Ok/Jam</h3>
+                <p class="text-secondary">Ruangan yang kedap udara dan dilengkapi dengan AC. Fasilitas : Gitar, Bass, Keyboard, Drum</p>
                 <ul class="list-inline text-secondary small mb-3">
-                  <li class="list-inline-item">Drum: Maple Custom</li>
-                  <li class="list-inline-item">Mic: SM7B, e609, D112</li>
-                  <li class="list-inline-item">Monitoring: In‑ear & wedges</li>
+                  <li class="list-inline-item">All Include Fullset</li>
                 </ul>
-                <a class="btn btn-outline-secondary btn-sm" href="#booking" data-open-booking data-studio="Studio B">Booking</a>
-              </div>
+                  <p>- Reguler = 50K/jam<br>
+           - Paket 2 jam = 90K<br>
+           - Paket 3 jam = 130K</p>
+        <a href="booking.php?studio=gold" class="btn btn-outline-primary">Booking</a>
+      </div>
             </div>
           </div>
-          <div class="col-md-4">
-            <div class="card h-100 shadow-lg overflow-hidden rounded-4">
-              <div class="ratio ratio-16x9" role="img" aria-label="Studio B dengan drum kit dan dinding akustik" style="background:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1600&auto=format&fit=crop') center/cover"></div>
-              <div class="card-body">
-                <h3 class="h5">Studio B — Live Room</h3>
-                <p class="text-secondary">Ruang live untuk band full, drum tracking, dan live session video.</p>
-                <ul class="list-inline text-secondary small mb-3">
-                  <li class="list-inline-item">Drum: Maple Custom</li>
-                  <li class="list-inline-item">Mic: SM7B, e609, D112</li>
-                  <li class="list-inline-item">Monitoring: In‑ear & wedges</li>
-                </ul>
-                <a class="btn btn-outline-secondary btn-sm" href="#booking" data-open-booking data-studio="Studio B">Booking</a>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 

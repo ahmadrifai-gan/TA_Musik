@@ -1,101 +1,149 @@
 <?php
-require('koneksi.php');
+session_start();
+$host="localhost"; $user="root"; $pass=""; $db="db_login";
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) die("Koneksi gagal: ".$conn->connect_error);
 
-if (isset($_POST['register'])) {
-    $email    = trim($_POST['txt_email']);
-    $username = trim($_POST['txt_username']);
-    $nama     = trim($_POST['txt_nama']);
-    $pass     = trim($_POST['txt_pass']);
-    $wa       = trim($_POST['txt_wa']);
+$register_msg = "";
+$nama = $email = $username = $whatsapp = "";
 
-    if (!empty($email) && !empty($username) && !empty($username) && !empty($pass) && !empty($wa)) {
-        $check = mysqli_query($koneksi, "SELECT * FROM user WHERE email='$email' OR username='$username'");
-        if (mysqli_num_rows($check) > 0) {
-            echo "<script>alert('Email atau Username sudah terdaftar.');</script>";
-        } else {
-            $hashedPass = password_hash($pass, PASSWORD_DEFAULT);
-            $query = "INSERT INTO user (email, username, nama, password, telp, role) 
-                      VALUES ('$email', '$username', '$nama', '$hashedPass', '$wa', 2)";
-            $result = mysqli_query($koneksi, $query);
+// === Load PHPMailer via Composer ===
+require __DIR__ . '/vendor/autoload.php';
 
-            if ($result) {
-                header("Location: login.php");
-                exit;
-            } else {
-                echo "<script>alert('Gagal register: " . mysqli_error($koneksi) . "');</script>";
-            }
-        }
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $nama = trim($_POST['nama_lengkap'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $username = trim($_POST['username'] ?? '');
+    $whatsapp = trim($_POST['whatsapp'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirm  = $_POST['confirm'] ?? '';
+
+    if ($nama === '' || $email === '' || $username === '' || $password === '' || $confirm === '' || $whatsapp === '') {
+        $register_msg = "Semua field wajib diisi.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $register_msg = "Format email tidak valid.";
+    } elseif ($password !== $confirm) {
+        $register_msg = "Konfirmasi password tidak sama!";
     } else {
-        echo "<script>alert('Data tidak boleh kosong!');</script>";
+        $stmt = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
+        $stmt->bind_param("ss", $username, $email);
+        $stmt->execute();
+        $stmt->store_result();
+
+        if ($stmt->num_rows > 0) {
+            $register_msg = "Username atau email sudah terdaftar!";
+        } else {
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $verification_code = rand(100000, 999999);
+
+            $insert = $conn->prepare("INSERT INTO users 
+                (nama_lengkap, username, password, email, whatsapp, verification_code, is_verified) 
+                VALUES (?, ?, ?, ?, ?, ?, 0)");
+            $insert->bind_param("ssssss", $nama, $username, $hash, $email, $whatsapp, $verification_code);
+
+            if ($insert->execute()) {
+                // kirim email
+                $mail = new PHPMailer(true);
+                try {
+                    $mail->isSMTP();
+                    $mail->Host       = 'smtp.gmail.com';
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = 'refangga1952@gmail.com'; // ganti dengan email Anda
+                    $mail->Password   = 'hwfx nsfo kwmy oduj';     // ganti dengan App Password Gmail
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port       = 587;
+
+                    $mail->setFrom('refangga1952@gmail.com', 'Admin Website');
+                    $mail->addAddress($email, $nama);
+
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Kode Verifikasi Akun Anda';
+                    $mail->Body    = "
+                        <h3>Halo, $nama</h3>
+                        <p>Terima kasih telah mendaftar. Berikut kode verifikasi akun Anda:</p>
+                        <h2 style='color:green;'>$verification_code</h2>
+                        <p>Masukkan kode ini di halaman <a href='http://localhost/verifikasi.php'>verifikasi</a> untuk mengaktifkan akun.</p>
+                    ";
+
+                    $mail->send();
+
+                    // === Redirect ke halaman verifikasi dengan email sebagai parameter ===
+                    header("Location: verifikasi.php?email=" . urlencode($email));
+                    exit;
+
+                } catch (Exception $e) {
+                    $register_msg = "Registrasi berhasil, tapi gagal mengirim email. Error: {$mail->ErrorInfo}";
+                }
+            } else {
+                $register_msg = "Gagal menyimpan data.";
+            }
+            $insert->close();
+        }
+        $stmt->close();
     }
 }
+$conn->close();
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <title>Register</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #e5e5e5;
-        }
-        .register-container {
-            min-height: 100vh;
-        }
-        .form-section {
-            background: #fff;
-            padding: 40px;
-        }
-        .right-section {
-            background: #d9d9d9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-light">
 
-<div class="container-fluid register-container">
-    <div class="row  min-vh-100">
-        <!-- Form kiri -->
-        <div class="col-md-4 form-section d-flex flex-column justify-content-center">
-            <h4 class="fw-bold mb-4">Daftar Sekarang Juga</h4>
-            <form action="register.php" method="POST">
-                <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input type="text" name="txt_username" class="form-control" placeholder="Masukkan username" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Nama</label>
-                    <input type="text" name="txt_nama" class="form-control" placeholder="Masukkan nama" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="txt_email" class="form-control" placeholder="Masukkan email" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="txt_pass" class="form-control" placeholder="Masukkan Password" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">No. WhatsApp</label>
-                    <input type="text" name="txt_wa" class="form-control" placeholder="Masukkan Nomor" required>
-                </div>
-                <button type="submit" name="register" class="btn btn-secondary w-100">Register</button>
-            </form>
-            <p class="mt-3">Sudah punya akun? <a href="login.php">Login</a></p>
-        </div>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow p-4" style="border-radius:1rem;">
+        <h3 class="text-center mb-4">Register</h3>
 
-        <!-- Bagian kanan -->
-        <div class="col-md-8 right-section">
-            <h3 class="fw-bold">Foto Studio</h3>
+        <?php if ($register_msg): ?>
+          <div class="alert alert-info py-2"><?= htmlspecialchars($register_msg) ?></div>
+        <?php endif; ?>
+
+        <form action="" method="POST">
+          <div class="mb-3">
+            <label class="form-label">Nama Lengkap</label>
+            <input type="text" class="form-control" name="nama_lengkap" required value="<?= htmlspecialchars($nama) ?>">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" required value="<?= htmlspecialchars($email) ?>">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-control" name="username" required value="<?= htmlspecialchars($username) ?>">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-control" name="password" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Konfirmasi Password</label>
+            <input type="password" class="form-control" name="confirm" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nomor WhatsApp</label>
+            <input type="text" class="form-control" name="whatsapp" required value="<?= htmlspecialchars($whatsapp) ?>">
+          </div>
+          <button type="submit" class="btn btn-success w-100">Register</button>
+        </form>
+
+        <div class="text-center mt-3">
+          <small>Sudah punya akun? <a href="login.php">Login</a></small>
         </div>
+      </div>
     </div>
+  </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

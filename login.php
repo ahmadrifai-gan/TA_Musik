@@ -1,99 +1,126 @@
 <?php
 session_start();
-require('koneksi.php');
+$host="localhost"; $user="root"; $pass=""; $db="db_login";
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) die("Koneksi gagal: ".$conn->connect_error);
 
-$error_message = "";
-
-if (isset($_POST['submit'])) {
-    $username = trim($_POST['txt_username']);
-    $pass     = trim($_POST['txt_pass']);
-
-    if (!empty($username) && !empty($pass)) {
-        // pakai prepared statement biar aman
-        $stmt = $koneksi->prepare("SELECT id_user, username, email, password, role FROM user WHERE username = ?");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result && $result->num_rows > 0) {
-            $row = $result->fetch_assoc();
-
-            $id       = $row['id_user'];
-            $userVal  = $row['username'];
-            $email    = $row['email'];
-            $passVal  = $row['password'];
-            $role     = $row['role'];
-
-            if (password_verify($pass, $passVal)) {
-                // login berhasil -> simpan session
-                $_SESSION['id_user']       = $id;
-                $_SESSION['username'] = $userVal;
-                $_SESSION['email']    = $email;
-                $_SESSION['role']     = $role;
-
-                header("Location: index.php");
-                exit;
-            } else {
-                $error_message = "Password salah!";
-            }
-        } else {
-            $error_message = "Username tidak ditemukan!";
-        }
+$login_error = "";
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!isset($_POST['username'], $_POST['password'])) {
+        $login_error = "Form belum lengkap.";
     } else {
-        $error_message = "Data tidak boleh kosong!";
+        $username = trim($_POST['username']);
+        $password = $_POST['password'];
+
+        // tambahkan cek kolom is_verified
+        $sql = "SELECT id, username, password, is_verified FROM users WHERE username = ?";
+        if ($stmt = $conn->prepare($sql)) {
+            $stmt->bind_param("s", $username);
+            $stmt->execute();
+            $stmt->store_result();
+
+            if ($stmt->num_rows === 1) {
+                $stmt->bind_result($id, $userdb, $hash, $is_verified);
+                $stmt->fetch();
+
+                if (!$is_verified) {
+                    $login_error = "Akun belum diverifikasi. Silakan cek email untuk kode OTP.";
+                } elseif (password_verify($password, $hash)) {
+                    $_SESSION['user_id'] = $id;
+                    $_SESSION['username'] = $userdb;
+
+                    // rehash jika perlu
+                    if (password_needs_rehash($hash, PASSWORD_DEFAULT)) {
+                        $newHash = password_hash($password, PASSWORD_DEFAULT);
+                        $u = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+                        $u->bind_param("si", $newHash, $id);
+                        $u->execute();
+                    }
+
+                    header("Location: index.php");
+                    exit;
+                } else {
+                    $login_error = "Password salah!";
+                }
+            } else {
+                $login_error = "Username tidak ditemukan!";
+            }
+            $stmt->close();
+        } else {
+            $login_error = "Gagal menyiapkan query.";
+        }
     }
 }
+$conn->close();
 ?>
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-light d-flex align-items-center justify-content-center vh-100">
 
-<div class="container-fluid bg-light">
-    <div class="row min-vh-100">
-        <!-- Form kiri -->
-        <div class="col-md-4 bg-white p-4 d-flex flex-column justify-content-center">
-            <h4 class="fw-bold mb-4">Login Sekarang Juga</h4>
-            
-            <?php if (!empty($error_message)): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <?php echo htmlspecialchars($error_message); ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            <?php endif; ?>
-            
-            <form action="login.php" method="POST">
-                <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input type="text" name="txt_username" class="form-control" placeholder="Masukkan username" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="txt_pass" class="form-control" placeholder="Masukkan Password" required>
-                </div>
-                <button type="submit" name="submit" class="btn btn-secondary w-100">Login</button>
-            </form>
-            
-            <div class="text-center mt-3">
-                <p class="mb-0">Belum punya akun? <a href="register.php" class="text-decoration-none">Daftar di sini</a></p>
-            </div>
-          
+  <div class="card shadow p-4" style="width: 24rem; border-radius: 1rem;">
+    <h3 class="text-center mb-4">Login</h3>
+    <?php if ($login_error): ?>
+      <div class="alert alert-danger py-2"><?= htmlspecialchars($login_error) ?></div>
+    <?php endif; ?>
+    
+    <!-- Form Login -->
+    <form action="" method="POST">
+      <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <input type="text" class="form-control" name="username" id="username" placeholder="Masukkan username" required>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" name="password" id="password" placeholder="Masukkan password" required>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="rememberMe">
+          <label class="form-check-label" for="rememberMe">Ingat saya</label>
         </div>
+        <!-- Trigger modal -->
+        <a href="#" class="small" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">Lupa Password?</a>
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Login</button>
+    </form>
 
-        <!-- Bagian kanan -->
-        <div class="col-md-8 d-flex align-items-center justify-content-center bg-secondary-subtle">
-            <h3 class="fw-bold">Foto Studio</h3>
-        </div>
+    <!-- Tambahan link ke register -->
+    <div class="text-center mt-3">
+      <small>Belum punya akun? <a href="register.php">Daftar sekarang</a></small>
     </div>
-</div>
+  </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Modal Lupa Password -->
+  <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content rounded-3 shadow">
+        <div class="modal-header">
+          <h5 class="modal-title" id="forgotPasswordLabel">Reset Password</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small">Masukkan email yang terdaftar. Link reset password akan dikirim ke email Anda.</p>
+          <!-- Form Reset Password -->
+          <form action="resetPass.php" method="POST">
+            <div class="mb-3">
+              <label for="resetEmail" class="form-label">Email</label>
+              <input type="email" class="form-control" name="resetEmail" id="resetEmail" placeholder="nama@email.com" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Kirim Link Reset</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
