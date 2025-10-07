@@ -29,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <li class="list-group-item"><strong>Nama:</strong> <?= $nama ?></li>
       <li class="list-group-item"><strong>Studio:</strong> <?= $studio ?></li>
       <li class="list-group-item"><strong>Paket:</strong> <?= $paket ?></li>
-      <li class="list-group-item"><strong>Tanggal:</strong> <?= $tanggal ?></li>
+      <li class="list-group-item"><strong>T anggal:</strong> <?= $tanggal ?></li>
       <li class="list-group-item"><strong>Jam:</strong> <?= $jam ?></li>
       <li class="list-group-item"><strong>Jam Selesai:</strong> <?= $jam_selesai ?></li>
       <li class="list-group-item"><strong>Durasi:</strong> <?= $durasi ?> Jam</li>
