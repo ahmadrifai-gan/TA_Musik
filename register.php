@@ -1,8 +1,11 @@
 <?php
 session_start();
-$host="localhost"; $user="root"; $pass=""; $db="db_login";
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) die("Koneksi gagal: ".$conn->connect_error);
+require "config/koneksi.php";
+
+// Pastikan koneksi berhasil
+if (!$koneksi) {
+    die("Koneksi gagal: " . mysqli_connect_error());
+}
 
 $register_msg = "";
 $nama = $email = $username = $whatsapp = "";
@@ -28,64 +31,73 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } elseif ($password !== $confirm) {
         $register_msg = "Konfirmasi password tidak sama!";
     } else {
-        $stmt = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
-        $stmt->bind_param("ss", $username, $email);
-        $stmt->execute();
-        $stmt->store_result();
-
-        if ($stmt->num_rows > 0) {
-            $register_msg = "Username atau email sudah terdaftar!";
+        $stmt = $koneksi->prepare("SELECT id_user FROM user WHERE username = ? OR email = ?");
+        if ($stmt === false) {
+            $register_msg = "Gagal menyiapkan statement: " . $koneksi->error;
         } else {
-            $hash = password_hash($password, PASSWORD_DEFAULT);
-            $verification_code = rand(100000, 999999);
+            $stmt->bind_param("ss", $username, $email);
+            $stmt->execute();
+            $stmt->store_result();
 
-            $insert = $conn->prepare("INSERT INTO users 
-                (nama_lengkap, username, password, email, whatsapp, verification_code, is_verified) 
-                VALUES (?, ?, ?, ?, ?, ?, 0)");
-            $insert->bind_param("ssssss", $nama, $username, $hash, $email, $whatsapp, $verification_code);
-
-            if ($insert->execute()) {
-                // kirim email
-                $mail = new PHPMailer(true);
-                try {
-                    $mail->isSMTP();
-                    $mail->Host       = 'smtp.gmail.com';
-                    $mail->SMTPAuth   = true;
-                    $mail->Username   = 'refangga1952@gmail.com'; // ganti dengan email Anda
-                    $mail->Password   = 'hwfx nsfo kwmy oduj';     // ganti dengan App Password Gmail
-                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                    $mail->Port       = 587;
-
-                    $mail->setFrom('refangga1952@gmail.com', 'Admin Website');
-                    $mail->addAddress($email, $nama);
-
-                    $mail->isHTML(true);
-                    $mail->Subject = 'Kode Verifikasi Akun Anda';
-                    $mail->Body    = "
-                        <h3>Halo, $nama</h3>
-                        <p>Terima kasih telah mendaftar. Berikut kode verifikasi akun Anda:</p>
-                        <h2 style='color:green;'>$verification_code</h2>
-                        <p>Masukkan kode ini di halaman <a href='http://localhost/verifikasi.php'>verifikasi</a> untuk mengaktifkan akun.</p>
-                    ";
-
-                    $mail->send();
-
-                    // === Redirect ke halaman verifikasi dengan email sebagai parameter ===
-                    header("Location: verifikasi.php?email=" . urlencode($email));
-                    exit;
-
-                } catch (Exception $e) {
-                    $register_msg = "Registrasi berhasil, tapi gagal mengirim email. Error: {$mail->ErrorInfo}";
-                }
+            if ($stmt->num_rows > 0) {
+                $register_msg = "Username atau email sudah terdaftar!";
             } else {
-                $register_msg = "Gagal menyimpan data.";
+                $hash = password_hash($password, PASSWORD_DEFAULT);
+                $verification_code = rand(100000, 999999);
+
+                // Tambahkan reset_token jika diperlukan oleh tabel
+                $reset_token = ""; // Atau gunakan bin2hex(random_bytes(16)) untuk token acak
+                $insert = $koneksi->prepare("INSERT INTO user (nama_lengkap, username, password, email, whatsapp, verification_code, is_verified, reset_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                if ($insert === false) {
+                    $register_msg = "Gagal menyiapkan insert: " . $koneksi->error;
+                } else {
+                    $is_verified = 0; // 0 = belum terverifikasi, 1 = sudah terverifikasi
+                    $insert->bind_param("ssssssis", $nama, $username, $hash, $email, $whatsapp, $verification_code, $is_verified, $reset_token);
+
+                    if ($insert->execute()) {
+                        // kirim email
+                        $mail = new PHPMailer(true);
+                        try {
+                            $mail->isSMTP();
+                            $mail->Host       = 'smtp.gmail.com';
+                            $mail->SMTPAuth   = true;
+                            $mail->Username   = 'refangga1952@gmail.com'; // ganti dengan email Anda
+                            $mail->Password   = 'hwfx nsfo kwmy oduj';     // ganti dengan App Password Gmail
+                            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                            $mail->Port       = 587;
+
+                            $mail->setFrom('refangga1952@gmail.com', 'Admin Website');
+                            $mail->addAddress($email, $nama);
+
+                            $mail->isHTML(true);
+                            $mail->Subject = 'Kode Verifikasi Akun Anda';
+                            $mail->Body    = "
+                                <h3>Halo, $nama</h3>
+                                <p>Terima kasih telah mendaftar. Berikut kode verifikasi akun Anda:</p>
+                                <h2 style='color:green;'>$verification_code</h2>
+                                <p>Masukkan kode ini di halaman <a href='http://localhost/verifikasi.php'>verifikasi</a> untuk mengaktifkan akun.</p>
+                            ";
+
+                            $mail->send();
+
+                            // === Redirect ke halaman verifikasi dengan email sebagai parameter ===
+                            header("Location: verifikasi.php?email=" . urlencode($email));
+                            exit;
+
+                        } catch (Exception $e) {
+                            $register_msg = "Registrasi berhasil, tapi gagal mengirim email. Error: {$mail->ErrorInfo}";
+                        }
+                    } else {
+                        $register_msg = "Gagal menyimpan data: " . $koneksi->error;
+                    }
+                    $insert->close();
+                }
             }
-            $insert->close();
+            $stmt->close();
         }
-        $stmt->close();
     }
 }
-$conn->close();
+// mysqli_close($koneksi); // Tutup koneksi jika tidak diperlukan lagi
 ?>
 
 <!DOCTYPE html>
