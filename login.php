@@ -1,8 +1,6 @@
 <?php
 session_start();
-$host="localhost"; $user="root"; $pass=""; $db="db_login";
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) die("Koneksi gagal: ".$conn->connect_error);
+require "config/koneksi.php";
 
 $login_error = "";
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -12,29 +10,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $username = trim($_POST['username']);
         $password = $_POST['password'];
 
-        // tambahkan cek kolom is_verified
-        $sql = "SELECT id, username, password, is_verified FROM users WHERE username = ?";
-        if ($stmt = $conn->prepare($sql)) {
+        // Query menyesuaikan kolom database
+        $sql = "SELECT id_user, username, password, is_verified FROM user WHERE username = ?";
+        if ($stmt = $koneksi->prepare($sql)) {
             $stmt->bind_param("s", $username);
             $stmt->execute();
             $stmt->store_result();
 
             if ($stmt->num_rows === 1) {
-                $stmt->bind_result($id, $userdb, $hash, $is_verified);
+                $stmt->bind_result($id_user, $userdb, $hash, $is_verified);
                 $stmt->fetch();
 
                 if (!$is_verified) {
                     $login_error = "Akun belum diverifikasi. Silakan cek email untuk kode OTP.";
                 } elseif (password_verify($password, $hash)) {
-                    $_SESSION['user_id'] = $id;
+                    $_SESSION['user_id'] = $id_user;
                     $_SESSION['username'] = $userdb;
 
                     // rehash jika perlu
                     if (password_needs_rehash($hash, PASSWORD_DEFAULT)) {
                         $newHash = password_hash($password, PASSWORD_DEFAULT);
-                        $u = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
-                        $u->bind_param("si", $newHash, $id);
+                        $u = $koneksi->prepare("UPDATE user SET password = ? WHERE id_user = ?");
+                        $u->bind_param("si", $newHash, $id_user);
                         $u->execute();
+                        $u->close();
                     }
 
                     header("Location: index.php");
@@ -51,8 +50,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
     }
 }
-$conn->close();
+$koneksi->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

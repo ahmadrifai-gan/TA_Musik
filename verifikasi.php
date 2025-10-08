@@ -1,8 +1,9 @@
 <?php
 session_start();
-$host="localhost"; $user="root"; $pass=""; $db="db_login";
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) die("Koneksi gagal: ".$conn->connect_error);
+require "config/koneksi.php";
+// $host="localhost"; $user="root"; $pass=""; $db="db_login";
+// $conn = new mysqli($host, $user, $pass, $db);
+// if ($conn->connect_error) die("Koneksi gagal: ".$conn->connect_error);
 
 $verifikasi_msg = "";
 $email = $_GET['email'] ?? '';  // ambil email dari URL
@@ -16,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($email === '' || $kode === '') {
         $verifikasi_msg = "Email dan kode wajib diisi.";
     } else {
-        $stmt = $conn->prepare("SELECT id, verification_code FROM users WHERE email = ? AND is_verified = 0");
+        $stmt = $koneksi->prepare("SELECT id_user, verification_code FROM user WHERE email = ? AND is_verified = 0");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -24,8 +25,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if ($row = $result->fetch_assoc()) {
             if ($row['verification_code'] == $kode) {
                 // update status user jadi verified
-                $update = $conn->prepare("UPDATE users SET is_verified = 1 WHERE id = ?");
-                $update->bind_param("i", $row['id']);
+                $update = $koneksi->prepare("UPDATE user SET is_verified = 1 WHERE id_user = ?");
+                $update->bind_param("i", $row['id_user']);
                 $update->execute();
                 $update->close();
 
@@ -40,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $stmt->close();
     }
 }
-$conn->close();
+$koneksi->close();
 ?>
 
 <!DOCTYPE html>
