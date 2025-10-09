@@ -111,15 +111,17 @@ $koneksi->close();
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
         </div>
         <div class="modal-body">
-          <p class="small">Masukkan email yang terdaftar. Link reset password akan dikirim ke email Anda.</p>
-          <!-- Form Reset Password -->
-          <form action="resetPass.php" method="POST">
-            <div class="mb-3">
-              <label for="resetEmail" class="form-label">Email</label>
-              <input type="email" class="form-control" name="resetEmail" id="resetEmail" placeholder="nama@email.com" required>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Kirim Link Reset</button>
-          </form>
+          <p class="small">
+  Masukkan email yang terdaftar. Kode OTP untuk reset password akan dikirim ke email Anda.
+</p>
+<form action="resetPass.php" method="POST">
+  <div class="mb-3">
+    <label for="resetEmail" class="form-label">Email</label>
+    <input type="email" class="form-control" name="resetEmail" id="resetEmail" placeholder="nama@email.com" required>
+  </div>
+  <button type="submit" class="btn btn-primary w-100">Kirim Kode OTP</button>
+</form>
+
         </div>
       </div>
     </div>
