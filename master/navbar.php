@@ -1,13 +1,13 @@
-<div class="nav-header" style="background:#fff !important; padding:10px !important; display:flex !important; justify-content:center !important; align-items:center !important;">
-  <div class="brand-logo d-flex align-items-center"
-       style="display:flex !important; align-items:center !important;">
-    <a href="../admin/index.php" class="d-flex align-items-center text-decoration-none"
-       style="display:flex !important; align-items:center !important; text-decoration:none !important;">
-      <img src="../assets/image/logo2.png" alt="Logo"
-           style="width:40px !important; height:40px !important; object-fit:cover !important; border-radius:8px !important; margin-right:10px !important;">
-      <h4 style="font-size:18px !important; margin:0 !important; color:#000 !important;">Reys Studio Musik</h4>
-    </a>
-  </div>
+<div class="nav-header"
+    style="background:#fff !important; padding:10px !important; display:flex !important; justify-content:center !important; align-items:center !important;">
+    <div class="brand-logo d-flex align-items-center" style="display:flex !important; align-items:center !important;">
+        <a href="../admin/index.php" class="d-flex align-items-center text-decoration-none"
+            style="display:flex !important; align-items:center !important; text-decoration:none !important;">
+            <img src="../assets/image/logo2.png" alt="Logo"
+                style="width:40px !important; height:40px !important; object-fit:cover !important; border-radius:8px !important; margin-right:10px !important;">
+            <h4 style="font-size:18px !important; margin:0 !important; color:#000 !important;">Reys Studio Musik</h4>
+        </a>
+    </div>
 </div>
 
 
@@ -194,7 +194,14 @@
                                 <li>
                                     <a href="page-lock.html"><i class="icon-lock"></i> <span>Lock Screen</span></a>
                                 </li>
-                                <li><a href="page-login.html"><i class="icon-key"></i> <span>Logout</span></a></li>
+                                <li><a href="../index.php"  onclick="confirmLogout()"><i class="icon-key"></i> <span>Logout</span></a></li>
+                                <script>
+                                    function confirmLogout() {
+                                        if (confirm("Apakah Anda yakin ingin logout?")) {
+                                            window.location.href = "../logout.php";
+                                        }
+                                    }
+                                </script>
                             </ul>
                         </div>
                     </div>

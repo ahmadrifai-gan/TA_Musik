@@ -37,23 +37,27 @@
     <!-- ChartistJS -->
     <script src="../assets/admin/plugins/chartist/js/chartist.min.js"></script>
     <script src="../assets/admin/plugins/chartist-plugin-tooltips/js/chartist-plugin-tooltip.min.js"></script>
-
-
+    
+    
+    
+    <!-- Page-level initializers -->
+    <script src="../assets/admin/js/plugins-init/chartjs-init-lite.js"></script>
 
     <script>
-      $('#modalEdit').on('show.bs.modal', function (event) {
-        var button = $(event.relatedTarget)
-        var id = button.data('id')
-        var nama = button.data('nama')
-        var deskripsi = button.data('deskripsi')
-        var harga = button.data('harga')
-
-        var modal = $(this)
-        modal.find('#edit-id').val(id)
-        modal.find('#edit-nama').val(nama)
-        modal.find('#edit-deskripsi').val(deskripsi)
-        modal.find('#edit-harga').val(harga)
-      })
+      (function() {
+        function addScript(src, onload){ var s=document.createElement('script'); s.src=src; s.onload=onload||null; document.body.appendChild(s); }
+        // Fallback jQuery if common.min.js failed
+        if (typeof window.jQuery === 'undefined') {
+          addScript('https://code.jquery.com/jquery-3.6.0.min.js');
+        }
+        // Fallback Chart.js if local not found
+        if (typeof window.Chart === 'undefined') {
+          addScript('https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.bundle.min.js', function(){
+            // Re-run chart initializer after CDN loads
+            addScript('../assets/admin/js/plugins-init/chartjs-init-lite.js');
+          });
+        }
+      })();
     </script>
 
 </body>
