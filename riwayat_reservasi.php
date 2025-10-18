@@ -15,7 +15,7 @@ $id_user = $_SESSION['user_id'];
 $filterStatus = $_GET['status'] ?? '';
 $filterTanggalAwal = $_GET['tanggal_awal'] ?? '';
 $filterTanggalAkhir = $_GET['tanggal_akhir'] ?? '';
-$showEntries = $_GET['entries'] ?? 10; // default 10 baris
+$showEntries = $_GET['entries'] ?? 10; // default 10 baris`
 
 // Query dasar
 $query = "SELECT * FROM booking WHERE id_user = ?";
