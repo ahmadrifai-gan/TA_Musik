@@ -42,9 +42,10 @@ session_start();
       </button>
       <div class="collapse navbar-collapse" id="mainNav">
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link" href="#booking">Panduan Booking</a></li>
+          <!-- ✅ perbaikan href agar menuju ke section yang sesuai -->
+          <li class="nav-item"><a class="nav-link" href="#services">Panduan Booking</a></li>
           <li class="nav-item"><a class="nav-link" href="#studios">Studio & Jadwal</a></li>
-          <li class="nav-item"><a class="nav-link" href="#pricing">Apa Kata Mereka</a></li>
+          <li class="nav-item"><a class="nav-link" href="#pricing">Testimoni</a></li>
           <li class="nav-item"><a class="nav-link" href="#testimonials">Lokasi</a></li>
           <li class="nav-item"><a class="nav-link" href="#contact">Kontak</a></li>
         </ul>
@@ -131,8 +132,13 @@ session_start();
         <div class="card shadow-lg rounded-4">
           <div class="card-body">
             <h1 class="text-center mt-3 mb-1">Panduan Booking</h1>
-            <p class="text-secondary mb-0">Lorem ipsum dolor sit amet consectetur adipisicing elit. Magnam quasi velit
-              molestias amet aperiam doloremque expedita tempora animi suscipit adipisci ipsum ab.</p>
+            <p class="text-secondary mb-0">Langkah-langkah mudah untuk memesan studio latihan musik kami:</p>
+            <ol class="mt-3">
+              <li>Pilih studio sesuai kebutuhan Anda di bagian <strong>Studio & Jadwal</strong>.</li>
+              <li>Lihat ketersediaan waktu, lalu klik <strong>Booking</strong>.</li>
+              <li>Isi data dan konfirmasi jadwal.</li>
+              <li>Datang sesuai jam yang telah dipesan dan nikmati fasilitas kami 🎶</li>
+            </ol>
           </div>
         </div>
       </div>
@@ -154,7 +160,8 @@ session_start();
               <div class="card-body">
                 <h3 class="h5">Studio A — Studio Gold</h3>
                 <p class="text-secondary">Ruang live untuk band full, drum tracking, dan live session video.</p>
-                <p>Reguler = 35K/jam (ALL INCLUDE NO KEYBOARD)<br>+ KEYBOARD = 5K/jam</p>
+               <p>- Reguler = 50K/jam<br>- Paket 2 jam = 90K<br>- Paket 3 jam = 130K</p>
+              
                 <div class="d-flex gap-2">
                   <a href="booking.php?studio=gold" class="btn btn-outline-primary flex-fill">Booking</a>
                   <a href="jadwal.php?studio=gold" class="btn btn-outline-success flex-fill">Lihat Jadwal</a>
@@ -171,7 +178,8 @@ session_start();
               <div class="card-body">
                 <h3 class="h5">Studio B — Studio Bronze</h3>
                 <p class="text-secondary">Ruang live untuk band full, drum tracking, dan live session video.</p>
-                <p>- Reguler = 50K/jam<br>- Paket 2 jam = 90K<br>- Paket 3 jam = 130K</p>
+                <p>Reguler = 35K/jam (ALL INCLUDE NO KEYBOARD)<br>+ KEYBOARD = 5K/jam</p>
+
                 <div class="d-flex gap-2">
                   <a href="booking.php?studio=bronze" class="btn btn-outline-primary flex-fill">Booking</a>
                   <a href="jadwal.php?studio=bronze" class="btn btn-outline-success flex-fill">Lihat Jadwal</a>
@@ -183,7 +191,7 @@ session_start();
       </div>
     </section>
 
-    <!-- Apa Kata Mereka -->
+    <!-- Testimoni -->
     <section id="pricing" class="py-5 bg-white">
       <div class="container-fluid px-3 px-md-4">
         <header class="text-center mb-4">
@@ -227,7 +235,7 @@ session_start();
       </div>
     </section>
 
-    <!-- Contact -->
+    <!-- Kontak -->
     <section id="contact" class="py-5 bg-white">
       <div class="container-fluid px-3 px-md-4">
         <div class="row g-3 align-items-stretch">
@@ -265,7 +273,7 @@ session_start();
   <!-- Footer -->
   <footer class="bg-dark text-white pt-5 pb-3">
     <div class="container text-center small">
-      <p class="mb-0">© <span data-year></span> ARIA Studio. All rights reserved.</p>
+      <p class="mb-0">© <span data-year></span>Reys Music Studio. All rights reserved.</p>
     </div>
   </footer>
 
