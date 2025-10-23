@@ -2,6 +2,19 @@
 session_start();
 require "config/koneksi.php";
 
+
+$id_user = $_SESSION['user_id'];
+
+// Ambil nama lengkap user dari tabel user
+$namaLengkap = '';
+$resultUser = $koneksi->query("SELECT nama_lengkap FROM user WHERE id_user = '$id_user' LIMIT 1");
+if ($resultUser && $rowUser = $resultUser->fetch_assoc()) {
+    $namaLengkap = $rowUser['nama_lengkap'];
+}
+
+// Simpan ke session (opsional tapi berguna)
+$_SESSION['nama_lengkap'] = $namaLengkap;
+
 // Cek login
 if (!isset($_SESSION['user_id'])) {
     echo "<script>
@@ -48,9 +61,9 @@ $result = $stmt->get_result();
 
 // Aksi batal
 if (isset($_GET['batal'])) {
-    $id_booking = $_GET['batal'];
-    $update = $koneksi->prepare("UPDATE booking SET status = 'dibatalkan' WHERE id_booking = ? AND id_user = ?");
-    $update->bind_param("ii", $id_booking, $id_user);
+    $id_order = $_GET['batal'];
+    $update = $koneksi->prepare("UPDATE booking SET status = 'dibatalkan' WHERE id_order = ? AND id_user = ?");
+    $update->bind_param("ii", $id_order, $id_user);
     $update->execute();
     $update->close();
     echo "<script>
@@ -119,7 +132,7 @@ if (isset($_GET['batal'])) {
 <nav class="navbar bg-white shadow-sm">
   <div class="container">
     <a class="navbar-brand" href="#">Reys Music Studio</a>
-    <a href="home.php" class="text-dark text-decoration-none fw-semibold">Home</a>
+    <a href="index.php" class="text-dark text-decoration-none fw-semibold">Home</a>
   </div>
 </nav>
 
@@ -195,12 +208,24 @@ if (isset($_GET['batal'])) {
                     <?php if ($result->num_rows > 0): ?>
                         <?php while ($row = $result->fetch_assoc()): ?>
                             <tr>
-                                <td><?= $row['id_booking'] ?></td>
-                                <td><?= $_SESSION['user_nama'] ?? 'Nama User' ?></td>
-                                <td><?= htmlspecialchars($row['id_studio']) ?></td>
+                                <td><?= $row['id_order'] ?></td>
+                                <td><?= htmlspecialchars($_SESSION['nama_lengkap'] ?? $namaLengkap) ?></td>
+
+<td>
+    <?php
+    $idStudio = $row['id_studio'];
+    $namaStudio = '-';
+    $queryStudio = $koneksi->query("SELECT nama FROM studio WHERE id_studio = '$idStudio' LIMIT 1");
+    if ($queryStudio && $rowStudio = $queryStudio->fetch_assoc()) {
+        $namaStudio = $rowStudio['nama'];
+    }
+    echo htmlspecialchars($namaStudio);
+    ?>
+</td>
+
                                 <td><?= htmlspecialchars($row['Tanggal']) ?></td>
-                                <td><?= htmlspecialchars($row['id_jadwal']) ?></td>
-                                <td>Rp <?= number_format($row['total_biaya'], 0, ',', '.') ?></td>
+                                <td><?= htmlspecialchars($row['jam_booking']) ?></td>
+                                <td>Rp <?= number_format($row['total_tagihan'], 0, ',', '.') ?></td>
                                 <td>
                                     <?php
                                     if ($row['status'] === 'menunggu') echo "<span class='badge badge-warning p-2'>Menunggu Konfirmasi</span>";
@@ -217,14 +242,19 @@ if (isset($_GET['batal'])) {
                                 </td>
                                 <td>
                                     <?php if (!empty($row['bukti_dp'])): ?>
-                                    <a href="uploads/<?= htmlspecialchars($row['bukti_dp']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">Lihat</a>
+                                    <a href="uploads/bukti_dp/<?= urlencode($row['bukti_dp']) ?>" 
+                                        target="_blank" 
+                                        class="btn btn-outline-primary btn-sm">
+                                        Lihat
+                                        </a>
+
                                     <?php else: ?>
                                     <span class="text-muted">Belum upload</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
                                     <button class="btn btn-blue btn-sm mb-1">Ubah Jadwal</button><br>
-                                    <a href="?batal=<?= $row['id_booking'] ?>" onclick="return confirm('Batalkan pesanan ini?')" class="btn btn-red btn-sm">Batalkan Pesanan</a>
+                                    <a href="?batal=<?= $row['id_order'] ?>" onclick="return confirm('Batalkan pesanan ini?')" class="btn btn-red btn-sm">Batalkan Pesanan</a>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
