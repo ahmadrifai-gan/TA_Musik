@@ -1,27 +1,26 @@
 <?php
-// Menentukan halaman aktif berdasarkan nama file PHP yang sedang dibuka
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
   <div class="menu">
     <a href="../admin/index.php" class="<?= ($current_page == 'index.php') ? 'active' : '' ?>">
-      <i class="fa-solid fa-table-columns"></i>Dashboard
+      <i class="fa-solid fa-table-columns"></i><span class="menu-text">Dashboard</span>
     </a>
     <a href="../admin/order.php" class="<?= ($current_page == 'order.php') ? 'active' : '' ?>">
-      <i class="fa-solid fa-cart-shopping"></i>Order
+      <i class="fa-solid fa-cart-shopping"></i><span class="menu-text">Order</span>
     </a>
     <a href="../admin/studio.php" class="<?= ($current_page == 'studio.php') ? 'active' : '' ?>">
-      <i class="fa-solid fa-music"></i>Studio
+      <i class="fa-solid fa-music"></i><span class="menu-text">Studio</span>
     </a>
     <a href="../admin/report.php" class="<?= ($current_page == 'report.php') ? 'active' : '' ?>">
-      <i class="fa-solid fa-chart-bar"></i>Report
+      <i class="fa-solid fa-chart-bar"></i><span class="menu-text">Report</span>
     </a>
     <a href="../admin/pelanggan.php" class="<?= ($current_page == 'pelanggan.php') ? 'active' : '' ?>">
-      <i class="fa-solid fa-user"></i>Pelanggan
+      <i class="fa-solid fa-user"></i><span class="menu-text">Pelanggan</span>
     </a>
     <a href="../admin/jadwal.php" class="<?= ($current_page == 'jadwal.php') ? 'active' : '' ?>">
-      <i class="fa-solid fa-calendar-days"></i>Jadwal
+      <i class="fa-solid fa-calendar-days"></i><span class="menu-text">Jadwal</span>
     </a>
   </div>
 </div>
@@ -47,11 +46,17 @@ $current_page = basename($_SERVER['PHP_SELF']);
     flex-direction: column;
     padding: 25px 20px;
     box-sizing: border-box;
+    transition: all 0.3s ease;
+    overflow: hidden;
   }
 
-  /* Tambahkan jarak atas agar tidak mentok navbar */
+  .sidebar.collapsed {
+    width: 70px;
+    padding: 25px 10px;
+  }
+
   .menu {
-    margin-top: 90px; /* sebelumnya 20px, dinaikkan agar turun ke bawah */
+    margin-top: 90px;
   }
 
   .menu a {
@@ -72,6 +77,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
     width: 22px;
     text-align: center;
     font-size: 18px;
+    transition: margin 0.3s;
+  }
+
+  .sidebar.collapsed .menu a i {
+    margin-right: 0;
   }
 
   .menu a.active {
@@ -84,4 +94,27 @@ $current_page = basename($_SERVER['PHP_SELF']);
     background-color: #ffd700;
     color: black;
   }
+
+  .menu-text {
+    transition: opacity 0.2s, visibility 0.2s;
+  }
+
+  .sidebar.collapsed .menu-text {
+    opacity: 0;
+    visibility: hidden;
+  }
 </style>
+
+<script>
+  // Script untuk toggle sidebar
+  document.addEventListener("DOMContentLoaded", function() {
+    const sidebar = document.getElementById("sidebar");
+    const toggleBtn = document.getElementById("hamburger"); // pastikan id ini ada di navbar.php
+
+    if (toggleBtn) {
+      toggleBtn.addEventListener("click", function() {
+        sidebar.classList.toggle("collapsed");
+      });
+    }
+  });
+</script>

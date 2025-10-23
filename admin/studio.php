@@ -19,7 +19,7 @@ $data = $studio->readAll();
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
         <h4 class="mb-1 text-primary">Manajemen Studio</h4>
-        <p class="text-muted mb-0">Kelola daftar studio, harga, dan deskripsi dengan mudah.</p>
+        <p class="text-muted mb-0">Kelola daftar studio, harga, dan fasilitas dengan mudah.</p>
       </div>
       <button class="btn btn-primary btn-sm shadow-sm" data-toggle="modal" data-target="#modalTambah">
         <i class="fa fa-plus mr-1"></i> Tambah Studio
@@ -56,7 +56,7 @@ $data = $studio->readAll();
               <tr>
                 <th width="10%">ID</th>
                 <th>Nama Studio</th>
-                <th>Deskripsi</th>
+                <th>fasilitas</th>
                 <th class="text-right">Harga</th>
                 <th width="17%">Aksi</th>
               </tr>
@@ -67,7 +67,7 @@ $data = $studio->readAll();
                   <tr>
                     <td class="text-center"><?= htmlspecialchars($row['id_studio']) ?></td>
                     <td><?= htmlspecialchars($row['nama']) ?></td>
-                    <td><?= htmlspecialchars($row['deskripsi']) ?></td>
+                    <td><?= htmlspecialchars($row['fasilitas']) ?></td>
                     <td class="text-right font-weight-bold text-success">
                       Rp <?= number_format($row['harga'], 0, ',', '.') ?>
                     </td>
@@ -77,7 +77,7 @@ $data = $studio->readAll();
                               data-target="#modalEdit"
                               data-id="<?= htmlspecialchars($row['id_studio']) ?>"
                               data-nama="<?= htmlspecialchars($row['nama']) ?>"
-                              data-deskripsi="<?= htmlspecialchars($row['deskripsi']) ?>"
+                              data-fasilitas="<?= htmlspecialchars($row['fasilitas']) ?>"
                               data-harga="<?= htmlspecialchars($row['harga']) ?>">
                         <i class="fa fa-edit"></i>
                       </button>
@@ -118,8 +118,8 @@ $data = $studio->readAll();
             <input type="text" name="nama" class="form-control" placeholder="Masukkan nama studio" required>
           </div>
           <div class="form-group">
-            <label>Deskripsi</label>
-            <textarea name="deskripsi" class="form-control" rows="3" placeholder="Masukkan deskripsi" required></textarea>
+            <label>fasilitas</label>
+            <textarea name="fasilitas" class="form-control" rows="3" placeholder="Masukkan fasilitas" required></textarea>
           </div>
           <div class="form-group">
             <label>Harga</label>
@@ -151,8 +151,8 @@ $data = $studio->readAll();
             <input type="text" name="nama" id="edit-nama" class="form-control" required>
           </div>
           <div class="form-group">
-            <label>Deskripsi</label>
-            <textarea name="deskripsi" id="edit-deskripsi" class="form-control" rows="3" required></textarea>
+            <label>fasilitas</label>
+            <textarea name="fasilitas" id="edit-fasilitas" class="form-control" rows="3" required></textarea>
           </div>
           <div class="form-group">
             <label>Harga</label>
@@ -176,7 +176,7 @@ $('#modalEdit').on('show.bs.modal', function (event) {
   var button = $(event.relatedTarget);
   $('#edit-id').val(button.data('id'));
   $('#edit-nama').val(button.data('nama'));
-  $('#edit-deskripsi').val(button.data('deskripsi'));
+  $('#edit-fasilitas').val(button.data('fasilitas'));
   $('#edit-harga').val(button.data('harga'));
 });
 </script> -->

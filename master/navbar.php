@@ -1,14 +1,26 @@
-<div class="nav-header"
-    style="background:#fff !important; padding:10px !important; display:flex !important; justify-content:center !important; align-items:center !important;">
-    <div class="brand-logo d-flex align-items-center" style="display:flex !important; align-items:center !important;">
-        <a href="../admin/index.php" class="d-flex align-items-center text-decoration-none"
-            style="display:flex !important; align-items:center !important; text-decoration:none !important;">
-            <img src="../assets/image/logo2.png" alt="Logo"
-                style="width:40px !important; height:40px !important; object-fit:cover !important; border-radius:8px !important; margin-right:10px !important;">
-            <h4 style="font-size:18px !important; margin:0 !important; color:#000 !important;">Reys Studio Musik</h4>
-        </a>
-    </div>
+<div class="nav-header" style="background-color: #ffffff; padding: 10px 20px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #ddd;">
+  <div class="brand-logo" style="display: flex; align-items: center;">
+    <a href="index.php" style="display: flex; align-items: center; text-decoration: none;">
+      <!-- Logo kecil -->
+      <b class="logo-abbr" style="margin-right: 12px;">
+        <img src="../assets/image/logo2.png" alt="Logo" style="width: 75px; height: 50px; border-radius: 10px; object-fit: cover;">
+      </b>
+
+      <!-- Logo compact -->
+      <span class="logo-compact" style="display: none;">
+        <img src="../assets/image/logo2.png" alt="Logo">
+      </span>
+
+      <!-- Nama brand -->
+      <span class="brand-title" style="color: #0D1321;">
+        <h4 style="font-size: 20px; margin: 0; color: #ffffffff; font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;"><b>Reys Studio Musik</b></h4>
+      </span>
+    </a>
+  </div>
 </div>
+
+
+
 
 
 
@@ -22,8 +34,8 @@
 <div class="header">
     <div class="header-content clearfix">
 
-        <div class="nav-control">
-            <div class="hamburger">
+       <div class="nav-control">
+            <div id="hamburger">
                 <span class="toggle-icon"><i class="icon-menu"></i></span>
             </div>
         </div>
@@ -40,14 +52,10 @@
                     </form>
                 </div>
             </div>
-        </div>
+        </div> 
         <div class="header-right">
             <ul class="clearfix">
-                <li class="icons dropdown"><a href="javascript:void(0)" data-toggle="dropdown">
-                        <i class="mdi mdi-email-outline"></i>
-                        <span class="badge badge-pill gradient-1">3</span>
-                    </a>
-                    <div class="drop-down animated fadeIn dropdown-menu">
+                    <!-- <div class="drop-down animated fadeIn dropdown-menu">
                         <div class="dropdown-content-heading d-flex justify-content-between">
                             <span class="">3 New Messages</span>
                             <a href="javascript:void()" class="d-inline-block">
@@ -99,13 +107,13 @@
                             </ul>
 
                         </div>
-                    </div>
-                </li>
-                <li class="icons dropdown"><a href="javascript:void(0)" data-toggle="dropdown">
+                    </div> -->
+                <!-- </li> -->
+                <!-- <li class="icons dropdown"><a href="javascript:void(0)" data-toggle="dropdown">
                         <i class="mdi mdi-bell-outline"></i>
                         <span class="badge badge-pill gradient-2">3</span>
-                    </a>
-                    <div class="drop-down animated fadeIn dropdown-menu dropdown-notfication">
+                    </a> -->
+                    <!-- <div class="drop-down animated fadeIn dropdown-menu dropdown-notfication">
                         <div class="dropdown-content-heading d-flex justify-content-between">
                             <span class="">2 New Notifications</span>
                             <a href="javascript:void()" class="d-inline-block">
@@ -157,8 +165,8 @@
                             </ul>
 
                         </div>
-                    </div>
-                </li>
+                    </div> -->
+                <!-- </li>
                 <li class="icons dropdown d-none d-md-flex">
                     <a href="javascript:void(0)" class="log-user" data-toggle="dropdown">
                         <span>English</span> <i class="fa fa-angle-down f-s-14" aria-hidden="true"></i>
@@ -171,7 +179,7 @@
                             </ul>
                         </div>
                     </div>
-                </li>
+                </li> -->
                 <li class="icons dropdown">
                     <div class="user-img c-pointer position-relative" data-toggle="dropdown">
                         <span class="activity active"></span>
@@ -183,17 +191,17 @@
                                 <li>
                                     <a href="app-profile.html"><i class="icon-user"></i> <span>Profile</span></a>
                                 </li>
-                                <li>
+                                <!-- <li>
                                     <a href="javascript:void()">
                                         <i class="icon-envelope-open"></i> <span>Inbox</span>
                                         <div class="badge gradient-3 badge-pill gradient-1">3</div>
                                     </a>
-                                </li>
+                                </li> -->
 
-                                <hr class="my-2">
+                                <!-- <hr class="my-2">
                                 <li>
                                     <a href="page-lock.html"><i class="icon-lock"></i> <span>Lock Screen</span></a>
-                                </li>
+                                </li> -->
                                 <li><a href="../index.php"  onclick="confirmLogout()"><i class="icon-key"></i> <span>Logout</span></a></li>
                                 <script>
                                     function confirmLogout() {

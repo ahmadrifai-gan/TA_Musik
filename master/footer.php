@@ -41,7 +41,7 @@
     
     
     <!-- Page-level initializers -->
-    <script src="../assets/admin/js/plugins-init/chartjs-init-lite.js"></script>
+    <!-- <script src="../assets/admin/js/plugins-init/chartjs-init-lite.js"></script> -->
 
     <script>
       (function() {
@@ -54,7 +54,7 @@
         if (typeof window.Chart === 'undefined') {
           addScript('https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.bundle.min.js', function(){
             // Re-run chart initializer after CDN loads
-            addScript('../assets/admin/js/plugins-init/chartjs-init-lite.js');
+            addScript('../assets/js/chartjs-init-lite.js');
           });
         }
       })();
