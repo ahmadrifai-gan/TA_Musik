@@ -11,6 +11,7 @@ if (!isset($_SESSION['booking_data'])) {
 $booking = $_SESSION['booking_data'];
 $error = '';
 $success = '';
+$showModal = false; // penanda untuk memicu modal pop-up
 
 // Validasi id_order
 if (!isset($booking['id_order']) || empty($booking['id_order'])) {
@@ -42,16 +43,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $dest_path = $uploadFileDir . $newFileName;
 
                 if (move_uploaded_file($fileTmpPath, $dest_path)) {
-                    $status = "dp_dibayar";
-                    $stmt = $koneksi->prepare("UPDATE booking SET bukti_dp = ?, status_pembayaran = 'dp_dibayar' WHERE id_order = ?");
+                    $stmt = $koneksi->prepare("UPDATE booking SET bukti_dp = ?, status_pembayaran = 'dp_dibayar', status = 'menunggu' WHERE id_order = ?");
                     $stmt->bind_param("si", $newFileName, $id_order);
                     if ($stmt->execute()) {
                         $success = "✅ Bukti DP berhasil diupload! Tunggu konfirmasi admin.";
                         unset($_SESSION['booking_data']);
+                        $showModal = true; // aktifkan modal konfirmasi
                     } else {
                         $error = "Terjadi kesalahan saat menyimpan ke database.";
                     }
-
                     $stmt->close();
                 } else {
                     $error = "Gagal memindahkan file ke folder tujuan.";
@@ -73,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="UTF-8">
   <title>Upload Bukti DP - Reys Music Studio</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <style>
     body {
       background: linear-gradient(135deg, #FFD54F 0%, #FFB300 100%);
@@ -82,7 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       justify-content: center;
       font-family: 'Poppins', sans-serif;
     }
-
     .card {
       background-color: #fffbea;
       border-radius: 20px;
@@ -91,13 +91,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       width: 100%;
       max-width: 600px;
     }
-
     h4 {
       text-align: center;
       font-weight: 700;
       color: #ff9800;
     }
-
     .btn-upload {
       background: linear-gradient(135deg, #FFD54F, #FFB300);
       border: none;
@@ -107,27 +105,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       border-radius: 10px;
       transition: all 0.3s ease;
     }
-
     .btn-upload:hover {
       background: linear-gradient(135deg, #FFCA28, #FFA000);
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(255, 179, 0, 0.4);
       color: #3e2723;
     }
-
     .alert {
       border-radius: 12px;
     }
-
     .form-label {
       font-weight: 600;
       color: #6d4c41;
     }
-
     .text-muted {
       color: #8d6e63 !important;
     }
-
     .back-link {
       display: block;
       text-align: center;
@@ -136,7 +129,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       text-decoration: none;
       font-weight: 600;
     }
-
     .back-link:hover {
       text-decoration: underline;
       color: #5d4037;
@@ -144,13 +136,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
+
   <div class="card">
     <h4 class="mb-4"><i class="bi bi-cloud-upload"></i> Upload Bukti DP</h4>
 
     <?php if ($error): ?>
       <div class="alert alert-danger"><?php echo $error; ?></div>
-    <?php elseif ($success): ?>
-      <div class="alert alert-success"><?php echo $success; ?></div>
     <?php endif; ?>
 
     <?php if (!$success): ?>
@@ -164,9 +155,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
     <?php endif; ?>
 
-    <a href="ketentuan.php" class="back-link">
-      ← Kembali ke Halaman Sebelumnya
-    </a>
+    <a href="ketentuan.php" class="back-link">← Kembali ke Halaman Sebelumnya</a>
   </div>
+
+  <!-- Modal Konfirmasi -->
+  <div class="modal fade" id="modalKonfirmasi" tabindex="-1" aria-labelledby="modalKonfirmasiLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-warning">
+          <h5 class="modal-title fw-bold" id="modalKonfirmasiLabel">Konfirmasi Reservasi</h5>
+        </div>
+        <div class="modal-body text-center">
+          <p class="mb-3">Bukti DP kamu telah berhasil diupload!<br>Apakah ingin melanjutkan ke halaman riwayat reservasi?</p>
+        </div>
+        <div class="modal-footer justify-content-center">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <a href="riwayat_reservasi.php" class="btn btn-warning text-dark fw-semibold">Lanjutkan</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <?php if ($showModal): ?>
+  <script>
+    var modal = new bootstrap.Modal(document.getElementById('modalKonfirmasi'));
+    window.addEventListener('load', () => modal.show());
+  </script>
+  <?php endif; ?>
+
 </body>
 </html>
