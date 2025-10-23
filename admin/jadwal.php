@@ -90,7 +90,70 @@ require "../master/sidebar.php";
     margin-bottom: 20px; 
     color: #222; 
 }
+
+/* 🔹 Tambahan warna ungu gelap untuk header tabel */
+.table-purple {
+  background-color: #4B0082 !important; /* Warna ungu gelap */
+  color: #ffffff !important;            /* Teks putih */
+}
+/* Tombol Filter tetap kuning, Tambah Jadwal hijau */
+.btn-filter {
+  background-color: #FFD700;
+  color: black;
+  border: 1px solid #e6c200;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-filter:hover {
+  background-color: #e6c200 !important;
+  color: white !important;
+}
+
+.btn-tambah {
+  background-color: #28a745; /* hijau */
+  color: black;
+  border: 1px solid #218838;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-tambah:hover {
+  background-color: #218838 !important; /* hijau lebih gelap */
+  color: white !important;
+}
+/* Badge status jadwal teks hitam */
+.badge.bg-danger,
+.badge.bg-success {
+    color: black !important;  /* teks jadi hitam */
+}
+/* Tombol Edit biru cerah */
+.btn-edit {
+    background-color: #17a2b8; /* biru cerah */
+    color: white;
+    border: 1px solid #138496;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+.btn-edit:hover {
+    background-color: #138496;
+    color: white;
+}
+
+/* Tombol Hapus merah gelap */
+.btn-delete {
+    background-color: #b71c1c; /* merah gelap */
+    color: white;
+    border: 1px solid #7f0000;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+.btn-delete:hover {
+    background-color: #7f0000;
+    color: white;
+}
 </style>
+
 
 <div class="content-body">
   <div class="container-fluid">
@@ -131,15 +194,14 @@ require "../master/sidebar.php";
 
             <!-- Tombol Filter -->
 <div class="col-md-2 col-sm-6 d-flex align-items-end">
-  <button type="submit" class="btn text-dark fw-semibold w-100"
-          style="background-color:#ffd700;">
-    <i class="fa fa-filter"></i> Filter
-  </button>
+<button type="submit" class="btn btn-filter fw-semibold w-100">
+  <i class="fa fa-filter"></i> Filter
+</button>
 </div>
 
-<!-- Tombol Tambah Jadwal (pindah ke samping filter) -->
+<!-- Tombol Tambah Jadwal (sama gaya dengan Filter) -->
 <div class="col-md-2 col-sm-6 d-flex align-items-end">
-  <button type="button" class="btn btn-success w-100"
+  <button type="button" class="btn btn-tambah fw-semibold w-100"
           data-bs-toggle="modal" data-bs-target="#modalTambah">
     <i class="fa fa-plus"></i> Tambah Jadwal
   </button>
@@ -155,7 +217,7 @@ require "../master/sidebar.php";
       <div class="card-body">
         <div class="table-responsive">
           <table class="table table-bordered text-center align-middle">
-            <thead class="table-primary">
+          <thead class="table-purple">
               <tr>
                 <th>No</th>
                 <th>Studio</th>
@@ -178,18 +240,18 @@ require "../master/sidebar.php";
                     <td><?= htmlspecialchars($row['jam_mulai']) ?></td>
                     <td><?= htmlspecialchars($row['jam_selesai']) ?></td>
                     <td>
-                      <?php if ($row['status'] == 'dibooking') : ?>
-                        <span class="badge bg-danger">Dibooking</span>
-                      <?php else : ?>
-                        <span class="badge bg-success">Belum Dibooking</span>
-                      <?php endif; ?>
+                    <?php if ($row['status'] == 'Dibooking') : ?>
+  <span class="badge bg-danger">Dibooking</span>
+<?php else : ?>
+  <span class="badge bg-success">Belum Dibooking</span>
+<?php endif; ?>
                     </td>
                     <td>
-                      <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalEdit<?= $row['id_jadwal'] ?>">Edit</button>
-                      <a href="jadwal.php?hapus=<?= $row['id_jadwal'] ?>" onclick="return confirm('Yakin ingin menghapus jadwal ini?')" class="btn btn-danger btn-sm">Hapus</a>
-                    </td>
+  <button class="btn btn-edit btn-sm" data-bs-toggle="modal" data-bs-target="#modalEdit<?= $row['id_jadwal'] ?>">Edit</button>
+  <a href="jadwal.php?hapus=<?= $row['id_jadwal'] ?>" onclick="return confirm('Yakin ingin menghapus jadwal ini?')" class="btn btn-delete btn-sm">Hapus</a>
+</td>
                   </tr>
-                  <!-- Modal Edit untuk row <?= $row['id_jadwal'] ?> -->
+                  <!-- Modal Edit untuk row -->
 <div class="modal fade" id="modalEdit<?= $row['id_jadwal'] ?>" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -232,9 +294,9 @@ require "../master/sidebar.php";
           <div class="form-group mb-3">
             <label>Status</label>
             <select name="status" class="form-control" required>
-              <option value="belum dibooking" <?= $row['status'] == 'belum dibooking' ? 'selected' : '' ?>>Belum Dibooking</option>
-              <option value="dibooking" <?= $row['status'] == 'dibooking' ? 'selected' : '' ?>>Dibooking</option>
-            </select>
+  <option value="Belum Dibooking" <?= $row['status'] == 'Belum Dibooking' ? 'selected' : '' ?>>Belum Dibooking</option>
+  <option value="Dibooking" <?= $row['status'] == 'Dibooking' ? 'selected' : '' ?>>Dibooking</option>
+</select>
           </div>
         </div>
 
@@ -299,9 +361,9 @@ require "../master/sidebar.php";
               <div class="form-group mb-3">
                 <label>Status</label>
                 <select name="status" class="form-control">
-                  <option value="belum dibooking">Belum Dibooking</option>
-                  <option value="dibooking">Dibooking</option>
-                </select>
+  <option value="Belum Dibooking">Belum Dibooking</option>
+  <option value="Dibooking">Dibooking</option>
+</select>
               </div>
             </div>
             <div class="modal-footer">

@@ -50,7 +50,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     <html><head><meta charset="utf-8">
     <style>
     table { border-collapse: collapse; width: 100%; }
-    th { background-color: #FFD700; font-weight: bold; padding: 8px; text-align: left; }
+    th { background-color: #4B0082; color: white; font-weight: bold; padding: 8px; text-align: left; }
     td { padding: 5px; border: 1px solid #ddd; }
     .total-row { background-color: #fff9e6; font-weight: bold; }
     </style></head><body>
@@ -185,6 +185,18 @@ $stmt->close();
 label { font-weight: 500; }
 .btn { font-weight: 500; }
 @media (max-width: 992px) { .content-body { margin-left: 0; } }
+.btn-filter {
+  background-color: #FFD700;
+  color: black;
+  border: 1px solid #e6c200;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-filter:hover {
+  background-color: #e6c200 !important; /* sedikit lebih gelap saat hover */
+  color: white !important;              /* teks berubah jadi putih */
+}
 </style>
 
 <div class="content-body">
@@ -219,9 +231,10 @@ label { font-weight: 500; }
           <input type="date" name="tgl_akhir" class="form-control" value="<?=htmlspecialchars($tgl_akhir)?>">
         </div>
         <div class="col-md-3">
-          <button class="btn text-dark mt-2" type="submit" style="background-color: #FFD700; border: 1px solid #e6c200;">
-            <i class="fa fa-filter"></i> Filter
-          </button>
+        <button class="btn btn-filter mt-2" type="submit">
+    <i class="fa fa-filter"></i> Filter
+</button>
+</button>
           <button type="button" class="btn btn-success mt-2" onclick="exportToExcel()">
             <i class="fa fa-file-excel"></i> Export Excel
           </button>
@@ -245,7 +258,7 @@ label { font-weight: 500; }
   <div class="card-body">
     <div class="table-responsive">
       <table class="table table-hover align-middle table-bordered">
-        <thead class="table-warning text-dark">
+      <thead style="background-color:#4B0082; color:white;">
           <tr>
             <th>No.</th>
             <th>ID Booking</th>
