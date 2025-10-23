@@ -42,7 +42,6 @@ session_start();
       </button>
       <div class="collapse navbar-collapse" id="mainNav">
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-          <!-- ✅ perbaikan href agar menuju ke section yang sesuai -->
           <li class="nav-item"><a class="nav-link" href="#services">Panduan Booking</a></li>
           <li class="nav-item"><a class="nav-link" href="#studios">Studio & Jadwal</a></li>
           <li class="nav-item"><a class="nav-link" href="#pricing">Testimoni</a></li>
@@ -50,6 +49,9 @@ session_start();
           <li class="nav-item"><a class="nav-link" href="#contact">Kontak</a></li>
         </ul>
         <div class="d-flex align-items-center gap-2">
+          <!-- Tombol Booking Kuning -->
+          <a class="btn btn-warning btn-sm fw-bold text-dark px-3" href="#studios">Booking</a>
+          
           <?php if (isset($_SESSION['username'])): ?>
             <div class="dropdown">
               <a class="btn btn-dark btn-sm dropdown-toggle" href="#" id="userDropdown" role="button"
@@ -203,13 +205,13 @@ session_start();
           <div class="carousel-inner">
             <div class="carousel-item active">
               <figure class="text-center p-4 border rounded-4 bg-light shadow-sm mx-auto" style="max-width:760px;">
-                <blockquote class="blockquote mb-2">“Tempatnya nyaman banget! Peralatannya lengkap dan suaranya mantap.”</blockquote>
+                <blockquote class="blockquote mb-2">"Tempatnya nyaman banget! Peralatannya lengkap dan suaranya mantap."</blockquote>
                 <figcaption class="blockquote-footer mb-0">Rian, <cite title="Musisi">Musisi</cite></figcaption>
               </figure>
             </div>
             <div class="carousel-item">
               <figure class="text-center p-4 border rounded-4 bg-light shadow-sm mx-auto" style="max-width:760px;">
-                <blockquote class="blockquote mb-2">“Engineer-nya sangat membantu dan hasil recording-nya keren banget.”</blockquote>
+                <blockquote class="blockquote mb-2">"Engineer-nya sangat membantu dan hasil recording-nya keren banget."</blockquote>
                 <figcaption class="blockquote-footer mb-0">Dinda, <cite title="Podcaster">Podcaster</cite></figcaption>
               </figure>
             </div>
@@ -243,7 +245,7 @@ session_start();
             <div class="text-center">
               <h5>HUBUNGI KAMI</h5>
               <h3>Ayo Diskusi Apa Kek</h3>
-              <p>DM Instagram ‘@reys_musicstudio’ , WhatsApp ‘085606564811’ , atau kirim pesan via formulir.</p>
+              <p>DM Instagram '@reys_musicstudio' , WhatsApp '085606564811' , atau kirim pesan via formulir.</p>
             </div>
           </div>
           <div class="col-md-6">
