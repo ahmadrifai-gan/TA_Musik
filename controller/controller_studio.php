@@ -10,7 +10,7 @@ class Studio {
     }
 
     // CREATE (dengan ID otomatis: ST001, ST002, dst)
-    public function create($nama, $deskripsi, $harga) {
+    public function create($nama, $fasilitas, $harga) {
         // Ambil ID terakhir
         $result = $this->conn->query("SELECT id_studio FROM studio ORDER BY id_studio DESC LIMIT 1");
         $row = $result->fetch_assoc();
@@ -23,9 +23,9 @@ class Studio {
             $id_studio = "ST001"; // jika belum ada data
         }
 
-        $sql = "INSERT INTO studio (id_studio, nama, deskripsi, harga) VALUES (?, ?, ?, ?)";
+        $sql = "INSERT INTO studio (id_studio, nama, fasilitas, harga) VALUES (?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("sssd", $id_studio, $nama, $deskripsi, $harga);
+        $stmt->bind_param("sssd", $id_studio, $nama, $fasilitas, $harga);
         return $stmt->execute();
     }
 
@@ -47,10 +47,10 @@ class Studio {
     }
 
     // UPDATE
-    public function update($id, $nama, $deskripsi, $harga) {
-        $sql = "UPDATE studio SET nama=?, deskripsi=?, harga=? WHERE id_studio=?";
+    public function update($id, $nama, $fasilitas, $harga) {
+        $sql = "UPDATE studio SET nama=?, fasilitas=?, harga=? WHERE id_studio=?";
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("ssds", $nama, $deskripsi, $harga, $id);
+        $stmt->bind_param("ssds", $nama, $fasilitas, $harga, $id);
         return $stmt->execute();
     }
 
@@ -67,12 +67,12 @@ class Studio {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
     $id = isset($_POST['id_studio']) ? trim($_POST['id_studio']) : '';
     $nama = isset($_POST['nama']) ? trim($_POST['nama']) : '';
-    $deskripsi = isset($_POST['deskripsi']) ? trim($_POST['deskripsi']) : '';
+    $fasilitas = isset($_POST['fasilitas']) ? trim($_POST['fasilitas']) : '';
     $harga = isset($_POST['harga']) ? (float) $_POST['harga'] : 0;
 
-    if ($id !== '' && $nama !== '' && $deskripsi !== '' && $harga > 0) {
+    if ($id !== '' && $nama !== '' && $fasilitas !== '' && $harga > 0) {
         $studio = new Studio($koneksi);
-        $success = $studio->update($id, $nama, $deskripsi, $harga);
+        $success = $studio->update($id, $nama, $fasilitas, $harga);
         header('Location: ../admin/studio.php?status=' . ($success ? 'updated' : 'error'));
         exit;
     }
@@ -97,12 +97,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus'])) {
 // Handle create request from admin/studio.php modal
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah'])) {
     $nama = isset($_POST['nama']) ? trim($_POST['nama']) : '';
-    $deskripsi = isset($_POST['deskripsi']) ? trim($_POST['deskripsi']) : '';
+    $fasilitas = isset($_POST['fasilitas']) ? trim($_POST['fasilitas']) : '';
     $harga = isset($_POST['harga']) ? (float) $_POST['harga'] : 0;
 
-    if ($nama !== '' && $deskripsi !== '' && $harga > 0) {
+    if ($nama !== '' && $fasilitas !== '' && $harga > 0) {
         $studio = new Studio($koneksi);
-        $success = $studio->create($nama, $deskripsi, $harga);
+        $success = $studio->create($nama, $fasilitas, $harga);
         if ($success) {
             header('Location: ../admin/studio.php?status=success');
             exit;
