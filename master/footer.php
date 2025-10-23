@@ -60,6 +60,48 @@
       })();
     </script>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Toast Notification -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+  <div id="liveToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastMessage">
+        Aksi berhasil dilakukan!
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showToast(message, type = 'success') {
+    const toastEl = document.getElementById('liveToast');
+    const toastBody = document.getElementById('toastMessage');
+    toastBody.textContent = message;
+    toastEl.className = `toast align-items-center text-bg-${type} border-0`;
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+  }
+</script>
+
+<script src="../assets/admin/js/plugins-init/chartjs-init-lite.js"></script>
+
+<script>
+  (function() {
+    function addScript(src, onload){ var s=document.createElement('script'); s.src=src; s.onload=onload||null; document.body.appendChild(s); }
+    if (typeof window.jQuery === 'undefined') {
+      addScript('https://code.jquery.com/jquery-3.6.0.min.js');
+    }
+    if (typeof window.Chart === 'undefined') {
+      addScript('https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.bundle.min.js', function(){
+        addScript('../assets/admin/js/plugins-init/chartjs-init-lite.js');
+      });
+    }
+  })();
+</script>
+
+
 </body>
 
 </html>
