@@ -177,18 +177,20 @@ if (isset($_GET['batal'])) {
         <div class="table-responsive">
             <table class="table table-bordered text-center align-middle">
                 <thead>
-                    <tr>
-                        <th>Id Order</th>
-                        <th>Nama</th>
-                        <th>Studio</th>
-                        <th>Tanggal Booking</th>
-                        <th>Jam Booking</th>
-                        <th>Total Tagihan</th>
-                        <th>Status Konfirmasi</th>
-                        <th>Status Pembayaran</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
+  <tr>
+    <th>Id Order</th>
+    <th>Nama</th>
+    <th>Studio</th>
+    <th>Tanggal Booking</th>
+    <th>Jam Booking</th>
+    <th>Total Tagihan</th>
+    <th>Status Konfirmasi</th>
+    <th>Status Pembayaran</th>
+    <th>Bukti DP</th>
+    <th>Aksi</th>
+  </tr>
+</thead>
+
                 <tbody>
                     <?php if ($result->num_rows > 0): ?>
                         <?php while ($row = $result->fetch_assoc()): ?>
@@ -212,6 +214,13 @@ if (isset($_GET['batal'])) {
                                     elseif ($row['status'] === 'terkonfirmasi') echo "<span class='badge badge-success p-2'>DP Terbayar</span>";
                                     else echo "<span class='badge badge-danger p-2'>Dibatalkan</span>";
                                     ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($row['bukti_dp'])): ?>
+                                    <a href="uploads/<?= htmlspecialchars($row['bukti_dp']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">Lihat</a>
+                                    <?php else: ?>
+                                    <span class="text-muted">Belum upload</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <button class="btn btn-blue btn-sm mb-1">Ubah Jadwal</button><br>
