@@ -8,7 +8,7 @@
         new Chart(t, {
             type: 'line',
             data: {
-                labels: ["jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"],
+                labels: ["jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Oktasa", "Nov", "Des"],
                 datasets: [{
                     data: [12, 18, 14, 20, 25, 22, 19, 1, 12, 6, 9, 2],
                     label: "Tim A",
