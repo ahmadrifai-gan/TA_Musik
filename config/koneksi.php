@@ -7,7 +7,7 @@ echo "🔍 Memulai koneksi...<br>";
 $server   = "localhost";
 $username = "root";
 $password = "";
-$db       = "ms_studio";
+$db       = "ms_studio1";
 
 $koneksi = mysqli_connect($server, $username, $password, $db);
 

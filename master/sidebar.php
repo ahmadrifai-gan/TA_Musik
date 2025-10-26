@@ -1,126 +1,87 @@
-<div class="nk-sidebar">           
-            <div class="nk-nav-scroll">
-                <ul class="metismenu" id="menu">
-                    <li>
-                        <a href="../admin/index.php">
-                            <i class="icon-speedometer menu-icon"></i><span class="nav-text">Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="mega-menu mega-menu-sm">
-                        <a href="../admin/order.php" aria-expanded="false">
-                            <i class="icon-globe-alt menu-icon"></i><span class="nav-text">Order</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="../admin/studio.php">
-                            <i class="icon-envelope menu-icon"></i> <span class="nav-text">Studio</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="has-arrow" href="javascript:void()" aria-expanded="false">
-                            <i class="icon-screen-tablet menu-icon"></i><span class="nav-text">Apps</span>
-                        </a>
-                        <ul aria-expanded="false">
-                            <li><a href="../assets/admin/app-profile.html">Profile</a></li>
-                            <li><a href="../assets/admin/app-calender.html">Calender</a></li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a class="has-arrow" href="javascript:void()" aria-expanded="false">
-                            <i class="icon-graph menu-icon"></i> <span class="nav-text">Charts</span>
-                        </a>
-                        <ul aria-expanded="false">
-                            <li><a href="../assets/admin/chart-flot.html">Flot</a></li>
-                            <li><a href="../assets/admin/chart-morris.html">Morris</a></li>
-                            <li><a href="../assets/admin/chart-chartjs.html">Chartjs</a></li>
-                            <li><a href="../assets/admin/chart-chartist.html">Chartist</a></li>
-                            <li><a href="../assets/admin/chart-sparkline.html">Sparkline</a></li>
-                            <li><a href="../assets/admin/chart-peity.html">Peity</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-label">UI Components</li>
-                    <li>
-                        <a class="has-arrow" href="javascript:void()" aria-expanded="false">
-                            <i class="icon-grid menu-icon"></i><span class="nav-text">UI Components</span>
-                        </a>
-                        <ul aria-expanded="false">
-                            <li><a href="../assets/admin/ui-accordion.html">Accordion</a></li>
-                            <li><a href="../assets/admin/ui-alert.html">Alert</a></li>
-                            <li><a href="../assets/admin/ui-badge.html">Badge</a></li>
-                            <li><a href="../assets/admin/ui-button.html">Button</a></li>
-                            <li><a href="../assets/admin/ui-button-group.html">Button Group</a></li>
-                            <li><a href="../assets/admin/ui-cards.html">Cards</a></li>
-                            <li><a href="../assets/admin/ui-carousel.html">Carousel</a></li>
-                            <li><a href="../assets/admin/ui-dropdown.html">Dropdown</a></li>
-                            <li><a href="../assets/admin/ui-list-group.html">List Group</a></li>
-                            <li><a href="../assets/admin/ui-media-object.html">Media Object</a></li>
-                            <li><a href="../assets/admin/ui-modal.html">Modal</a></li>
-                            <li><a href="../assets/admin/ui-pagination.html">Pagination</a></li>
-                            <li><a href="../assets/admin/ui-popover.html">Popover</a></li>
-                            <li><a href="../assets/admin/ui-progressbar.html">Progressbar</a></li>
-                            <li><a href="../assets/admin/ui-tab.html">Tab</a></li>
-                            <li><a href="../assets/admin/ui-typography.html">Typography</a></li>
-                        <!-- </ul>
-                    </li>
-                    <li>
-                        <a class="has-arrow" href="javascript:void()" aria-expanded="false">
-                            <i class="icon-layers menu-icon"></i><span class="nav-text">Components</span>
-                        </a>
-                        <ul aria-expanded="false"> -->
-                            <li><a href="../assets/admin/uc-nestedable.html">Nestedable</a></li>
-                            <li><a href="../assets/admin/uc-noui-slider.html">Noui Slider</a></li>
-                            <li><a href="../assets/admin/uc-sweetalert.html">Sweet Alert</a></li>
-                            <li><a href="../assets/admin/uc-toastr.html">Toastr</a></li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a href="widgets.html" aria-expanded="false">
-                            <i class="icon-badge menu-icon"></i><span class="nav-text">Widget</span>
-                        </a>
-                    </li>
-                    <li class="nav-label">Forms</li>
-                    <li>
-                        <a class="has-arrow" href="javascript:void()" aria-expanded="false">
-                            <i class="icon-note menu-icon"></i><span class="nav-text">Forms</span>
-                        </a>
-                        <ul aria-expanded="false">
-                            <li><a href="../assets/admin/form-basic.html">Basic Form</a></li>
-                            <li><a href="../assets/admin/form-validation.html">Form Validation</a></li>
-                            <li><a href="../assets/admin/form-step.html">Step Form</a></li>
-                            <li><a href="../assets/admin/form-editor.html">Editor</a></li>
-                            <li><a href="../assets/admin/form-picker.html">Picker</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-label">Table</li>
-                    <li>
-                        <a class="has-arrow" href="javascript:void()" aria-expanded="false">
-                            <i class="icon-menu menu-icon"></i><span class="nav-text">Table</span>
-                        </a>
-                        <ul aria-expanded="false">
-                            <li><a href="../assets/admin/table-basic.html" aria-expanded="false">Basic Table</a></li>
-                            <li><a href="../assets/admin/table-datatable.html" aria-expanded="false">Data Table</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-label">Pages</li>
-                    <li>
-                        <a class="has-arrow" href="javascript:void()" aria-expanded="false">
-                            <i class="icon-notebook menu-icon"></i><span class="nav-text">Pages</span>
-                        </a>
-                        <ul aria-expanded="false">
-                            <li><a href="../assets/admin/page-login.html">Login</a></li>
-                            <li><a href="../assets/admin/page-register.html">Register</a></li>
-                            <li><a href="../assets/admin/page-lock.html">Lock Screen</a></li>
-                            <li><a class="has-arrow" href="javascript:void()" aria-expanded="false">Error</a>
-                                <ul aria-expanded="false">
-                                    <li><a href="../assets/admin/page-error-404.html">Error 404</a></li>
-                                    <li><a href="../assets/admin/page-error-403.html">Error 403</a></li>
-                                    <li><a href="../assets/admin/page-error-400.html">Error 400</a></li>
-                                    <li><a href="../assets/admin/page-error-500.html">Error 500</a></li>
-                                    <li><a href="../assets/admin/page-error-503.html">Error 503</a></li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
+<?php
+// Menentukan halaman aktif berdasarkan nama file PHP yang sedang dibuka
+$current_page = basename($_SERVER['PHP_SELF']);
+?>
+
+<div class="sidebar">
+  <div class="menu">
+    <a href="../admin/index.php" class="<?= ($current_page == 'index.php') ? 'active' : '' ?>">
+      <i class="fa-solid fa-table-columns"></i>Dashboard
+    </a>
+    <a href="../admin/order.php" class="<?= ($current_page == 'order.php') ? 'active' : '' ?>">
+      <i class="fa-solid fa-cart-shopping"></i>Order
+    </a>
+    <a href="../admin/studio.php" class="<?= ($current_page == 'studio.php') ? 'active' : '' ?>">
+      <i class="fa-solid fa-music"></i>Studio
+    </a>
+    <a href="../admin/report.php" class="<?= ($current_page == 'report.php') ? 'active' : '' ?>">
+      <i class="fa-solid fa-chart-bar"></i>Report
+    </a>
+    <a href="../admin/pelanggan.php" class="<?= ($current_page == 'pelanggan.php') ? 'active' : '' ?>">
+      <i class="fa-solid fa-user"></i>Pelanggan
+    </a>
+    <a href="../admin/jadwal.php" class="<?= ($current_page == 'jadwal.php') ? 'active' : '' ?>">
+      <i class="fa-solid fa-calendar-days"></i>Jadwal
+    </a>
+  </div>
+</div>
+
+<!-- Font dan Icon -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 230px;
+    background-color: #0D1321;
+    display: flex;
+    flex-direction: column;
+    padding: 25px 20px;
+    box-sizing: border-box;
+  }
+
+  /* Tambahkan jarak atas agar tidak mentok navbar */
+  .menu {
+    margin-top: 90px; /* sebelumnya 20px, dinaikkan agar turun ke bawah */
+  }
+
+  .menu a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: white;
+    padding: 11px 14px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    transition: all 0.3s;
+    font-size: 17px;
+    font-weight: 400;
+  }
+
+  .menu a i {
+    margin-right: 12px;
+    width: 22px;
+    text-align: center;
+    font-size: 18px;
+  }
+
+  .menu a.active {
+    background-color: #ffd700;
+    color: black;
+    font-weight: 600;
+  }
+
+  .menu a:hover {
+    background-color: #ffd700;
+    color: black;
+  }
+</style>

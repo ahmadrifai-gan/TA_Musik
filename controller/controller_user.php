@@ -1,42 +1,59 @@
 <?php
 class User {
     private $koneksi;
-    private $table = "user";
-
-    public function __construct($db) {
-        $this->koneksi = $db;
+    
+    public function __construct($koneksi) {
+        $this->koneksi = $koneksi;
     }
-
+    
+    // Method yang sudah ada
     public function readAll() {
-        $query = "SELECT * FROM $this->table ORDER BY id_user ASC";
+        $query = "SELECT * FROM tb_user ORDER BY id_user DESC";
         $result = mysqli_query($this->koneksi, $query);
-
         $data = [];
-        if ($result) {
-            while ($row = mysqli_fetch_assoc($result)) {
-                $data[] = $row;
-            }
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data[] = $row;
         }
         return $data;
     }
-
-    public function delete($id) {
-        $query = "DELETE FROM $this->table WHERE id_user = '$id'";
-        return mysqli_query($this->koneksi, $query);
+    
+    // Method baru untuk ambil data berdasarkan ID
+    public function readById($id_user) {
+        $query = "SELECT * FROM tb_user WHERE id_user = ?";
+        $stmt = mysqli_prepare($this->koneksi, $query);
+        mysqli_stmt_bind_param($stmt, "i", $id_user);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        return mysqli_fetch_assoc($result);
+    }
+    
+    // Method baru untuk update data
+    public function update($id_user, $username, $email, $password, $no_wa) {
+        $query = "UPDATE tb_user SET username = ?, email = ?, password = ?, no_wa = ? WHERE id_user = ?";
+        $stmt = mysqli_prepare($this->koneksi, $query);
+        mysqli_stmt_bind_param($stmt, "ssssi", $username, $email, $password, $no_wa, $id_user);
+        return mysqli_stmt_execute($stmt);
+    }
+    
+    // Method untuk hapus (yang sudah ada)
+    public function delete($id_user) {
+        $query = "DELETE FROM tb_user WHERE id_user = ?";
+        $stmt = mysqli_prepare($this->koneksi, $query);
+        mysqli_stmt_bind_param($stmt, "i", $id_user);
+        return mysqli_stmt_execute($stmt);
     }
 }
 
-// Aksi hapus
+// Handle hapus data
 if (isset($_POST['hapus'])) {
-    require "../config/koneksi.php";
+    $id_user = $_POST['id_user'];
     $user = new User($koneksi);
-    $id = $_POST['id_user'];
-
-    if ($user->delete($id)) {
-        header("Location: ../admin/pelanggan.php?status=deleted");
+    
+    if ($user->delete($id_user)) {
+        header("Location: ../admin/pelanggan.php?status=success");
     } else {
         header("Location: ../admin/pelanggan.php?status=error");
     }
-    exit;
+    exit();
 }
 ?>

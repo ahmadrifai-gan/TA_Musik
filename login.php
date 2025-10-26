@@ -11,14 +11,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $password = $_POST['password'];
 
         // Query menyesuaikan kolom database
-        $sql = "SELECT id_user, username, password, is_verified FROM user WHERE username = ?";
+        $sql = "SELECT id_user, username, password, is_verified, role FROM user WHERE username = ?";
         if ($stmt = $koneksi->prepare($sql)) {
             $stmt->bind_param("s", $username);
             $stmt->execute();
             $stmt->store_result();
 
             if ($stmt->num_rows === 1) {
-                $stmt->bind_result($id_user, $userdb, $hash, $is_verified);
+                $stmt->bind_result($id_user, $userdb, $hash, $is_verified, $role);
                 $stmt->fetch();
 
                 if (!$is_verified) {
@@ -26,6 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 } elseif (password_verify($password, $hash)) {
                     $_SESSION['user_id'] = $id_user;
                     $_SESSION['username'] = $userdb;
+                    $_SESSION['role'] = $role ?: 'user';
 
                     // rehash jika perlu
                     if (password_needs_rehash($hash, PASSWORD_DEFAULT)) {
@@ -36,7 +37,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $u->close();
                     }
 
-                    header("Location: index.php");
+                    if (strtolower($_SESSION['role']) === 'admin') {
+                        header("Location: admin/index.php");
+                    } else {
+                        header("Location: index.php");
+                    }
                     exit;
                 } else {
                     $login_error = "Password salah!";
@@ -106,15 +111,17 @@ $koneksi->close();
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
         </div>
         <div class="modal-body">
-          <p class="small">Masukkan email yang terdaftar. Link reset password akan dikirim ke email Anda.</p>
-          <!-- Form Reset Password -->
-          <form action="resetPass.php" method="POST">
-            <div class="mb-3">
-              <label for="resetEmail" class="form-label">Email</label>
-              <input type="email" class="form-control" name="resetEmail" id="resetEmail" placeholder="nama@email.com" required>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Kirim Link Reset</button>
-          </form>
+          <p class="small">
+  Masukkan email yang terdaftar. Kode OTP untuk reset password akan dikirim ke email Anda.
+</p>
+<form action="resetPass.php" method="POST">
+  <div class="mb-3">
+    <label for="resetEmail" class="form-label">Email</label>
+    <input type="email" class="form-control" name="resetEmail" id="resetEmail" placeholder="nama@email.com" required>
+  </div>
+  <button type="submit" class="btn btn-primary w-100">Kirim Kode OTP</button>
+</form>
+
         </div>
       </div>
     </div>
