@@ -32,68 +32,49 @@ if ($result) {
 
 <div class="content-body" style="background-color:#f4f5f7; min-height:100vh; padding:30px;">
   <div class="container-fluid">
-    <h2 class="fw-bold mb-4" style="font-size:28px; color:#1a1a1a; font-family:'Poppins', sans-serif;">Data Pelanggan</h2>
+    <h2 class="fw-bold mb-4" style="font-size:28px; color:#1a1a1a;">Data Pelanggan</h2>
 
     <div class="bg-white rounded shadow-sm p-4">
-      <!-- wrapper dua kolom -->
-      <div class="data-wrapper" style="display:flex; align-items:flex-start; gap:15px;">
-        
-        <!-- tabel -->
-        <div class="table-responsive" style="flex:1;">
-          <table class="table table-bordered" style="width:100%; border-collapse:collapse; font-family:'Poppins', sans-serif; color:#1a1a1a;">
-            <thead>
-              <tr style="background-color:#f8f9fa;">
-                <th style="padding:12px; text-align:center; font-weight:600;">No.</th>
-                <th style="padding:12px; text-align:left; font-weight:600;">Username</th>
-                <th style="padding:12px; text-align:left; font-weight:600;">Nama Lengkap</th>
-                <th style="padding:12px; text-align:left; font-weight:600;">Email</th>
-                <th style="padding:12px; text-align:left; font-weight:600;">Password</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php if (!empty($data)): ?>
-                <?php $no = $offset + 1; foreach ($data as $row): ?>
-                  <tr style="border-bottom:1px solid #dee2e6; height:60px;">
-                    <td style="padding:12px; text-align:center;"><?= $no++ ?></td>
-                    <td style="padding:12px;"><?= htmlspecialchars($row['username']) ?></td>
-                    <td style="padding:12px;"><?= htmlspecialchars($row['nama_lengkap']) ?></td>
-                    <td style="padding:12px;"><?= htmlspecialchars($row['email']) ?></td>
-                    <td style="padding:12px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" 
-                        title="<?= htmlspecialchars($row['password']) ?>"><?= htmlspecialchars($row['password']) ?></td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php else: ?>
-                <tr>
-                  <td colspan="5" style="padding:20px; text-align:center; color:#6c757d;">Belum ada data pengguna.</td>
-                </tr>
-              <?php endif; ?>
-            </tbody>
-          </table>
-        </div>
+      <!-- Header -->
+      <div class="header-row" style="display:flex; gap:15px; background-color:#4B0082; color:#fff; font-weight:600; padding:12px; border-radius:6px; text-align:center;">
+          <div style="width:50px; display:flex; align-items:center; justify-content:center;">No.</div>
+          <div style="width:150px; display:flex; align-items:center; justify-content:center;">Username</div>
+          <div style="width:200px; display:flex; align-items:center; justify-content:center;">Nama Lengkap</div>
+          <div style="width:200px; display:flex; align-items:center; justify-content:center;">Email</div>
+          <div style="width:200px; display:flex; align-items:center; justify-content:center;">Password</div>
+          <div style="width:150px; display:flex; align-items:center; justify-content:center;">Aksi</div>
+      </div>
 
-        <!-- tombol aksi di luar tabel tapi sejajar -->
-        <div class="action-col" style="display:flex; flex-direction:column; gap:5px; justify-content:start; padding-top:46px;">
+
+      <!-- Baris Data -->
+      <div class="data-wrapper" style="display:flex; flex-direction:column; gap:10px; margin-top:5px;">
+        <?php $no = $offset + 1; ?>
+        <?php if (!empty($data)): ?>
           <?php foreach ($data as $row): ?>
-            <div style="display:flex; gap:8px; height:60px; align-items:center;">
-              
-              <a href="edit_pelanggan.php?id=<?= $row['id_user'] ?>"
-                 style="background-color:#f4a261; color:#fff; border-radius:6px; padding:8px 16px; font-weight:600; text-decoration:none; transition:0.2s;">
-                Edit
-              </a>
+            <div class="row-data" style="display:flex; align-items:center; background:#fff; padding:12px; border-radius:6px; box-shadow:0 0 2px rgba(0,0,0,0.1);">
 
-              <form action="../controller/controller_user.php" method="POST" 
-                    onsubmit="return confirm('Yakin ingin menghapus pengguna ini?');" 
-                    style="margin:0;">
-                <input type="hidden" name="id_user" value="<?= $row['id_user'] ?>">
-                <button type="submit" name="hapus"
-                        style="background-color:#e76f51; color:#fff; border-radius:6px; padding:8px 16px; font-weight:600; border:none; cursor:pointer; transition:0.2s;">
-                  Hapus
-                </button>
-              </form>
+              <div class="data-col" style="flex:1; display:flex; gap:15px; text-align:center;">
+                <div style="width:50px;"><?= $no++ ?>.</div>
+                <div style="width:150px;"><?= htmlspecialchars($row['username']) ?></div>
+                <div style="width:200px;"><?= htmlspecialchars($row['nama_lengkap']) ?></div>
+                <div style="width:200px;"><?= htmlspecialchars($row['email']) ?></div>
+                <div style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<?= htmlspecialchars($row['password']) ?>"><?= htmlspecialchars($row['password']) ?></div>
+              </div>
+
+              <!-- Tombol Edit & Hapus -->
+              <div class="action-btns" style="width:150px; display:flex; gap:8px; justify-content:center;">
+                <a href="edit_pelanggan.php?id=<?= $row['id_user'] ?>" class="btn-edit">Edit</a>
+                <form action="../controller/controller_user.php" method="POST" onsubmit="return confirm('Yakin ingin menghapus pengguna ini?');" style="margin:0;">
+                  <input type="hidden" name="id_user" value="<?= $row['id_user'] ?>">
+                  <button type="submit" name="hapus" class="btn-hapus">Hapus</button>
+                </form>
+              </div>
 
             </div>
           <?php endforeach; ?>
-        </div>
+        <?php else: ?>
+          <div style="padding:20px; text-align:center; color:#6c757d; background:#fff; border-radius:6px;">Belum ada data pengguna.</div>
+        <?php endif; ?>
       </div>
 
       <!-- Pagination -->
@@ -122,6 +103,7 @@ if ($result) {
           </li>
         </ul>
       </div>
+
     </div>
   </div>
 </div>
@@ -131,24 +113,18 @@ if ($result) {
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-body, table, th, td, button, a {
+body, button, a {
   font-family: 'Poppins', sans-serif;
 }
 
-.table th, .table td {
-  vertical-align: middle;
-  border: 1px solid #dee2e6;
+/* Tombol */
+.btn-edit {
+  background-color:#f4a261; color:#fff; border-radius:6px; padding:6px 12px; font-weight:600; text-decoration:none; transition:0.2s;
 }
+.btn-edit:hover { background-color:#e38e40; }
 
-.table tbody tr:hover {
-  background-color: #f8f9fa;
+.btn-hapus {
+  background-color:#e76f51; color:#fff; border-radius:6px; padding:6px 12px; font-weight:600; border:none; cursor:pointer; transition:0.2s;
 }
-
-/* Efek hover tombol */
-a[href*="edit_pelanggan.php"]:hover {
-  background-color: #e38e40;
-}
-button[name="hapus"]:hover {
-  background-color: #d65b43;
-}
+.btn-hapus:hover { background-color:#d65b43; }
 </style>
