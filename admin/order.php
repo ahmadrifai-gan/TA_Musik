@@ -10,8 +10,9 @@ require "../config/koneksi.php";
 // ---------------------- PROSES HAPUS ----------------------
 if (isset($_POST['hapus'])) {
   $id = $_POST['hapus_id'];
+  $current_page = isset($_GET['page']) ? '?page=' . (int)$_GET['page'] : '';
   mysqli_query($koneksi, "DELETE FROM booking WHERE id_order = '$id'");
-  echo "<script>alert('Data berhasil dihapus!'); window.location='order.php';</script>";
+  echo "<script>alert('Data berhasil dihapus!'); window.location='order.php$current_page';</script>";
   exit;
 }
 
@@ -39,7 +40,9 @@ if (isset($_POST['simpan'])) {
     INSERT INTO booking (id_user, id_studio, total_tagihan, status, status_pembayaran, Tanggal, jam_booking)
     VALUES ('$id_user', '$id_studio', '$total_tagihan', '$status', '$status_pembayaran', '$tanggal', '$jam_booking')
   ");
-  echo "<script>alert('Order baru berhasil ditambahkan!'); window.location='order.php';</script>";
+  $total_after_insert = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) as total FROM booking"))['total'];
+  $last_page = ceil($total_after_insert / 10);
+  echo "<script>alert('Order baru berhasil ditambahkan!'); window.location='order.php?page=$last_page';</script>";
   exit;
 }
 
@@ -91,18 +94,22 @@ if (isset($_POST['update'])) {
   
   if ($result) {
     $affected = mysqli_affected_rows($koneksi);
+    $current_page = isset($_GET['page']) ? '?page=' . (int)$_GET['page'] : '';
     if ($affected > 0) {
-      echo "<script>alert('✅ Data berhasil diupdate! ($affected row)'); window.location='order.php';</script>";
+      echo "<script>alert('✅ Data berhasil diupdate! ($affected row)'); window.location='order.php$current_page';</script>";
     } else {
-      echo "<script>alert('⚠ Query berhasil tapi tidak ada data yang berubah (data sama)'); window.location='order.php';</script>";
+      echo "<script>alert('⚠ Query berhasil tapi tidak ada data yang berubah (data sama)'); window.location='order.php$current_page';</script>";
     }
   } else {
     $error = mysqli_error($koneksi);
-    echo "<script>alert('❌ Error: $error'); window.location='order.php';</script>";
+    $current_page = isset($_GET['page']) ? '?page=' . (int)$_GET['page'] : '';
+    echo "<script>alert('❌ Error: $error'); window.location='order.php$current_page';</script>";
   }
   exit;
 }
+
 ?>
+
 
 <style>
   * {
@@ -288,6 +295,101 @@ if (isset($_POST['update'])) {
     color: #95a5a6;
     font-style: italic;
   }
+
+  /* Pagination Styling */
+  .pagination-wrapper {
+    padding: 20px;
+    background: white;
+    border-top: 1px solid #ecf0f1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .pagination-info {
+    color: #7f8c8d;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 5px;
+  }
+
+  .page-item {
+    display: inline-block;
+  }
+
+  .page-link {
+    display: block;
+    padding: 10px 16px;
+    color: #4B0082;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .page-link:hover:not(.disabled):not(.active) {
+    background-color: #f8f9fa;
+    border-color: #4B0082;
+    color: #4B0082;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(75, 0, 130, 0.15);
+  }
+
+  .page-item.active .page-link {
+    background-color: #4B0082;
+    border-color: #4B0082;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(75, 0, 130, 0.3);
+  }
+
+  .page-item.disabled .page-link {
+    color: #95a5a6;
+    background-color: #f5f5f5;
+    border-color: #e0e0e0;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .page-link i {
+    font-size: 12px;
+    vertical-align: middle;
+  }
+
+  @media (max-width: 768px) {
+    .pagination-wrapper {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .pagination-info {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .pagination {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .page-link {
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+  }
 </style>
 
 <div class="content-body">
@@ -319,6 +421,31 @@ if (isset($_POST['update'])) {
             </thead>
             <tbody>
               <?php
+              // Pagination setup
+              $per_page = 10;
+              
+              // Get total records first
+              $count_query = "
+                SELECT COUNT(*) as total
+                FROM booking b
+                JOIN user u ON b.id_user = u.id_user
+                JOIN studio s ON b.id_studio = s.id_studio
+              ";
+              $count_result = mysqli_query($koneksi, $count_query);
+              $total_records = mysqli_fetch_assoc($count_result)['total'];
+              $total_pages = ceil($total_records / $per_page);
+              
+              // Validate page number
+              $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+              if ($page < 1) $page = 1;
+              if ($page > $total_pages && $total_pages > 0) {
+                header("Location: order.php?page=" . $total_pages);
+                exit;
+              }
+              
+              $offset = ($page - 1) * $per_page;
+
+              // Query dengan pagination
               $query = "
                 SELECT 
                   b.id_order,
@@ -334,9 +461,10 @@ if (isset($_POST['update'])) {
                 JOIN user u ON b.id_user = u.id_user
                 JOIN studio s ON b.id_studio = s.id_studio
                 ORDER BY b.id_order ASC
+                LIMIT $per_page OFFSET $offset
               ";
               $result = mysqli_query($koneksi, $query);
-              $no = 1;
+              $no = ($page - 1) * $per_page + 1;
               if (mysqli_num_rows($result) > 0):
                 while ($row = mysqli_fetch_assoc($result)):
                   // Format tanggal
@@ -403,9 +531,81 @@ if (isset($_POST['update'])) {
           </table>
         </div>
       </div>
+      
+      <!-- Pagination -->
+      <?php if ($total_pages > 1): ?>
+      <div class="pagination-wrapper">
+        <div class="pagination-info">
+          Menampilkan <?= ($offset + 1) ?> - <?= min($offset + $per_page, $total_records) ?> dari <?= $total_records ?> data
+        </div>
+        <nav aria-label="Page navigation">
+          <ul class="pagination">
+            <!-- Previous Button -->
+            <?php if ($page > 1): ?>
+              <li class="page-item">
+                <a class="page-link" href="?page=<?= $page - 1 ?>">
+                  <i class="fa fa-chevron-left"></i> Sebelumnya
+                </a>
+              </li>
+            <?php else: ?>
+              <li class="page-item disabled">
+                <span class="page-link"><i class="fa fa-chevron-left"></i> Sebelumnya</span>
+              </li>
+            <?php endif; ?>
+
+            <!-- Page Numbers -->
+            <?php
+            $start_page = max(1, $page - 2);
+            $end_page = min($total_pages, $page + 2);
+            
+            if ($start_page > 1): ?>
+              <li class="page-item">
+                <a class="page-link" href="?page=1">1</a>
+              </li>
+              <?php if ($start_page > 2): ?>
+                <li class="page-item disabled">
+                  <span class="page-link">...</span>
+                </li>
+              <?php endif; ?>
+            <?php endif; ?>
+
+            <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+              <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+              </li>
+            <?php endfor; ?>
+
+            <?php if ($end_page < $total_pages): ?>
+              <?php if ($end_page < $total_pages - 1): ?>
+                <li class="page-item disabled">
+                  <span class="page-link">...</span>
+                </li>
+              <?php endif; ?>
+              <li class="page-item">
+                <a class="page-link" href="?page=<?= $total_pages ?>"><?= $total_pages ?></a>
+              </li>
+            <?php endif; ?>
+
+            <!-- Next Button -->
+            <?php if ($page < $total_pages): ?>
+              <li class="page-item">
+                <a class="page-link" href="?page=<?= $page + 1 ?>">
+                  Selanjutnya <i class="fa fa-chevron-right"></i>
+                </a>
+              </li>
+            <?php else: ?>
+              <li class="page-item disabled">
+                <span class="page-link">Selanjutnya <i class="fa fa-chevron-right"></i></span>
+              </li>
+            <?php endif; ?>
+          </ul>
+        </nav>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
 </div>
+
 
 <!-- Modal Tambah -->
 <div class="modal fade" id="modalTambah">

@@ -6,7 +6,7 @@ require "../master/header.php";
 require "../master/navbar.php";
 require "../master/sidebar.php";
 require "../config/koneksi.php";
-// require "../controller/controller_user.php";
+require "../controller/controller_user.php";
 
 // Pagination setup
 $limit = 10;
@@ -36,13 +36,13 @@ if ($result) {
 
     <div class="bg-white rounded shadow-sm p-4">
       <!-- Header -->
-      <div class="header-row" style="display:flex; gap:15px; background-color:#4B0082; color:#fff; font-weight:600; padding:12px; border-radius:6px; text-align:center;">
+      <div class="header-row" style="display:flex; gap:10px; background-color:#4B0082; color:#fff; font-weight:600; padding:12px; border-radius:6px; text-align:center;">
           <div style="width:50px; display:flex; align-items:center; justify-content:center;">No.</div>
-          <div style="width:150px; display:flex; align-items:center; justify-content:center;">Username</div>
-          <div style="width:200px; display:flex; align-items:center; justify-content:center;">Nama Lengkap</div>
-          <div style="width:200px; display:flex; align-items:center; justify-content:center;">Email</div>
-          <div style="width:200px; display:flex; align-items:center; justify-content:center;">Password</div>
-          <div style="width:100px; display:flex; align-items:center; justify-content:center;">Aksi</div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center;">Username</div>
+          <div style="flex:1.5; display:flex; align-items:center; justify-content:center;">Nama Lengkap</div>
+          <div style="flex:2; display:flex; align-items:center; justify-content:center;">Email</div>
+          <div style="flex:2; display:flex; align-items:center; justify-content:center;">Password</div>
+          <!-- <div style="width:100px; display:flex; align-items:center; justify-content:center;">Aksi</div> -->
       </div>
 
 
@@ -51,23 +51,21 @@ if ($result) {
         <?php $no = $offset + 1; ?>
         <?php if (!empty($data)): ?>
           <?php foreach ($data as $row): ?>
-            <div class="row-data" style="display:flex; align-items:center; background:#fff; padding:12px; border-radius:6px; box-shadow:0 0 2px rgba(0,0,0,0.1);">
+            <div class="row-data" style="display:flex; gap:10px; align-items:center; background:#fff; padding:12px; border-radius:6px; box-shadow:0 0 2px rgba(0,0,0,0.1);">
 
-              <div class="data-col" style="flex:1; display:flex; gap:15px; text-align:center;">
-                <div style="width:50px;"><?= $no++ ?>.</div>
-                <div style="width:150px;"><?= htmlspecialchars($row['username']) ?></div>
-                <div style="width:200px;"><?= htmlspecialchars($row['nama_lengkap']) ?></div>
-                <div style="width:200px;"><?= htmlspecialchars($row['email']) ?></div>
-                <div style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<?= htmlspecialchars($row['password']) ?>"><?= htmlspecialchars($row['password']) ?></div>
-              </div>
+              <div style="width:50px; text-align:center;"><?= $no++ ?>.</div>
+              <div style="flex:1; text-align:center;"><?= htmlspecialchars($row['username']) ?></div>
+              <div style="flex:1.5; text-align:center;"><?= htmlspecialchars($row['nama_lengkap']) ?></div>
+              <div style="flex:2; text-align:center; word-break:break-word;"><?= htmlspecialchars($row['email']) ?></div>
+              <div style="flex:2; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<?= htmlspecialchars($row['password']) ?>"><?= htmlspecialchars($row['password']) ?></div>
 
               <!-- Tombol Hapus -->
-              <div class="action-btns" style="width:100px; display:flex; justify-content:center;">
+              <!-- <div style="width:100px; display:flex; justify-content:center;">
                 <form action="../controller/controller_user.php" method="POST" onsubmit="return confirm('Yakin ingin menghapus pengguna ini?');" style="margin:0;">
                   <input type="hidden" name="id_user" value="<?= $row['id_user'] ?>">
                   <button type="submit" name="hapus" class="btn-hapus">Hapus</button>
                 </form>
-              </div>
+              </div> -->
 
             </div>
           <?php endforeach; ?>
@@ -77,11 +75,16 @@ if ($result) {
       </div>
 
       <!-- Pagination -->
-      <div style="padding-top:20px; display:flex; justify-content:center;">
-        <ul style="display:flex; list-style:none; padding:0; gap:5px; font-family:'Poppins', sans-serif;">
+      <div class="pagination-wrapper">
+        <div class="pagination-info">
+          Menampilkan <?= $offset + 1 ?> - <?= min($offset + $limit, $total_data) ?> dari <?= $total_data ?> data
+        </div>
+        <ul class="pagination-list">
           <li>
             <a href="?page=<?= max(1, $page - 1) ?>" 
-               style="color:#1a1a1a; text-decoration:none; border:1px solid #dee2e6; padding:8px 12px; border-radius:4px; <?= ($page <= 1) ? 'pointer-events:none; opacity:0.5;' : '' ?>">&lt;&lt;</a>
+               class="pagination-link <?= ($page <= 1) ? 'disabled' : '' ?>">
+               &lt; Sebelumnya
+            </a>
           </li>
           <?php
           $range = 2;
@@ -90,15 +93,16 @@ if ($result) {
           for ($i = $start; $i <= $end; $i++): ?>
             <li>
               <a href="?page=<?= $i ?>" 
-                 style="text-decoration:none; padding:8px 12px; border-radius:4px; border:1px solid #dee2e6;
-                 <?= ($i == $page) ? 'background-color:#00b8ff; color:#fff; border-color:#00b8ff;' : 'color:#1a1a1a;' ?>">
+                 class="pagination-link <?= ($i == $page) ? 'active' : '' ?>">
                 <?= $i ?>
               </a>
             </li>
           <?php endfor; ?>
           <li>
             <a href="?page=<?= min($total_pages, $page + 1) ?>" 
-               style="color:#1a1a1a; text-decoration:none; border:1px solid #dee2e6; padding:8px 12px; border-radius:4px; <?= ($page >= $total_pages) ? 'pointer-events:none; opacity:0.5;' : '' ?>">&gt;&gt;</a>
+               class="pagination-link <?= ($page >= $total_pages) ? 'disabled' : '' ?>">
+               Selanjutnya &gt;
+            </a>
           </li>
         </ul>
       </div>
@@ -120,5 +124,59 @@ body, button, a {
 .btn-hapus {
   background-color:#e76f51; color:#fff; border-radius:6px; padding:6px 12px; font-weight:600; border:none; cursor:pointer; transition:0.2s;
 }
-.btn-hapus:hover { background-color:#d65b43; }
+.btn-hapus:hover { background-color:#d65b43; }
+
+/* Pagination Styles */
+.pagination-wrapper {
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.pagination-info {
+  color: #999;
+  font-size: 14px;
+}
+
+.pagination-list {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 8px;
+  align-items: center;
+}
+
+.pagination-link {
+  text-decoration: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  color: #666;
+  background-color: #fff;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.pagination-link:hover:not(.disabled):not(.active) {
+  background-color: #f5f5f5;
+  border-color: #d0d0d0;
+}
+
+.pagination-link.active {
+  background-color: #6C1FAF;
+  color: #fff;
+  border-color: #6C1FAF;
+  font-weight: 600;
+}
+
+.pagination-link.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 </style>
