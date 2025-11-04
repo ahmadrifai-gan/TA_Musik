@@ -61,12 +61,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             $mail->isSMTP();
                             $mail->Host       = 'smtp.gmail.com';
                             $mail->SMTPAuth   = true;
-                            $mail->Username   = 'refangga1952@gmail.com'; // ganti dengan email Anda
-                            $mail->Password   = 'hwfx nsfo kwmy oduj';     // ganti dengan App Password Gmail
+                            $mail->Username   = 'nisrinafirdaus02@gmail.com'; // ganti dengan email Anda
+                            $mail->Password   = 'lurk svtg ihli uyhr';     // ganti dengan App Password Gmail
                             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                             $mail->Port       = 587;
 
-                            $mail->setFrom('refangga1952@gmail.com', 'Admin Website');
+                            $mail->setFrom('nisrinafirdaus02@gmail.com', 'Admin Reys Studio Music');
                             $mail->addAddress($email, $nama);
 
                             $mail->isHTML(true);
