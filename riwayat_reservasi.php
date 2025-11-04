@@ -26,20 +26,25 @@ if (isset($_POST['ubah_jadwal'])) {
     $id_order = $_POST['id_order'];
     $tanggal_baru = $_POST['tanggal_baru'];
     $jam_baru = $_POST['jam_baru'];
+    $studio_baru = $_POST['studio_baru'] ?? '';
 
-    if (!empty($tanggal_baru) && !empty($jam_baru)) {
-        $updateJadwal = $koneksi->prepare("UPDATE booking SET Tanggal = ?, jam_booking = ? WHERE id_order = ? AND id_user = ?");
-        $updateJadwal->bind_param("ssii", $tanggal_baru, $jam_baru, $id_order, $id_user);
-        $updateJadwal->execute();
-        $updateJadwal->close();
-
-        echo "<script>
-            alert('Jadwal berhasil diubah!');
-            window.location.href='riwayat_reservasi.php';
-        </script>";
-        exit;
+    if (!empty($tanggal_baru) && !empty($jam_baru) && !empty($studio_baru)) {
+        // Update dengan studio juga - id_studio adalah VARCHAR
+        $updateJadwal = $koneksi->prepare("UPDATE booking SET Tanggal = ?, jam_booking = ?, id_studio = ? WHERE id_order = ? AND id_user = ?");
+        $updateJadwal->bind_param("sssii", $tanggal_baru, $jam_baru, $studio_baru, $id_order, $id_user);
+        
+        if ($updateJadwal->execute()) {
+            $updateJadwal->close();
+            echo "<script>
+                alert('Jadwal berhasil diubah!');
+                window.location.href='riwayat_reservasi.php?updated=' + Date.now();
+            </script>";
+            exit;
+        } else {
+            echo "<script>alert('Gagal mengubah jadwal: " . $koneksi->error . "');</script>";
+        }
     } else {
-        echo "<script>alert('Tanggal dan jam tidak boleh kosong!');</script>";
+        echo "<script>alert('Semua field harus diisi!');</script>";
     }
 }
 
@@ -171,11 +176,47 @@ $result = $stmt->get_result();
             padding: 5px 10px;
         }
         .studio-bronze {
-            background-color: #cd7f32 !important; /* warna bronze */
+            background-color: #cd7f32 !important;
             color: white;
             font-weight: 600;
             border-radius: 5px;
             padding: 5px 10px;
+        }
+
+        /* Style untuk modal konfirmasi */
+        #konfirmasiModal .modal-dialog {
+            max-width: 400px;
+        }
+        #konfirmasiModal .modal-content {
+            border-radius: 10px;
+            padding: 20px;
+        }
+        #konfirmasiModal h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .btn-konfirmasi-ya {
+            background-color: #FFD700;
+            color: #000;
+            font-weight: 600;
+            border: none;
+            padding: 8px 30px;
+            border-radius: 5px;
+        }
+        .btn-konfirmasi-ya:hover {
+            background-color: #f2c200;
+        }
+        .btn-konfirmasi-batal {
+            background-color: #6c757d;
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 8px 30px;
+            border-radius: 5px;
+        }
+        .btn-konfirmasi-batal:hover {
+            background-color: #5a6268;
         }
     </style>
 </head>
@@ -264,7 +305,6 @@ $result = $stmt->get_result();
                                         $namaStudio = $rowStudio['nama'];
                                     }
 
-                                    // Tambahan logika warna background tanpa ubah struktur
                                     $classStudio = '';
                                     if (stripos($namaStudio, 'gold') !== false) {
                                         $classStudio = 'studio-gold';
@@ -307,7 +347,8 @@ $result = $stmt->get_result();
                                                 data-bs-target="#ubahModal" 
                                                 data-id="<?= $row['id_order'] ?>"
                                                 data-tanggal="<?= $row['Tanggal'] ?>"
-                                                data-jam="<?= $row['jam_booking'] ?>">
+                                                data-jam="<?= $row['jam_booking'] ?>"
+                                                data-studio="<?= $row['id_studio'] ?>">
                                             Ubah Jadwal
                                         </button><br>
                                         <a href="?batal=<?= $row['id_order'] ?>" onclick="return confirm('Batalkan pesanan ini?')" class="btn btn-red btn-sm">Batalkan</a>
@@ -333,26 +374,75 @@ $result = $stmt->get_result();
 <!-- Modal Ubah Jadwal -->
 <div class="modal fade" id="ubahModal" tabindex="-1" aria-labelledby="ubahModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form method="POST" class="modal-content">
+    <form method="POST" id="formUbahJadwal" class="modal-content">
+      <input type="hidden" name="ubah_jadwal" value="1">
       <div class="modal-header">
-        <h5 class="modal-title" id="ubahModalLabel">Ubah Jadwal Booking</h5>
+        <h5 class="modal-title" id="ubahModalLabel">Ubah Jadwal Reservasi</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <input type="hidden" name="id_order" id="id_order">
+        
         <div class="mb-3">
-          <label class="form-label">Tanggal Baru</label>
-          <input type="date" name="tanggal_baru" id="tanggal_baru" class="form-control" required>
+          <label class="form-label fw-semibold">Nama</label>
+          <p class="mb-0"><?= htmlspecialchars($_SESSION['nama_lengkap'] ?? $namaLengkap) ?></p>
         </div>
+
         <div class="mb-3">
-          <label class="form-label">Jam Baru</label>
-          <input type="text" name="jam_baru" id="jam_baru" class="form-control" placeholder="Contoh: 14.00-15.00" required>
+          <label class="form-label fw-semibold">Studio</label>
+          <select class="form-select" id="studio_select" disabled>
+            <option>Studio Gold</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Tanggal dan jam booking lama</label>
+          <p class="mb-0" id="jadwal_lama">19/09/2025, 17.00-18.00</p>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Pilih Studio</label>
+          <select class="form-select" name="studio_baru" id="studio_baru_select" required>
+            <?php
+            // Ambil semua studio dari database
+            $studioQuery = $koneksi->query("SELECT id_studio, nama FROM studio");
+            while ($studioRow = $studioQuery->fetch_assoc()) {
+                echo "<option value='" . $studioRow['id_studio'] . "'>" . htmlspecialchars($studioRow['nama']) . "</option>";
+            }
+            ?>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Pilih Tanggal Baru</label>
+          <input type="date" name="tanggal_baru" id="tanggal_baru" class="form-control" placeholder="dd/mm/yy" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Pilih Jam Baru</label>
+          <input type="text" name="jam_baru" id="jam_baru" class="form-control" placeholder="--:--" required>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="submit" name="ubah_jadwal" class="btn btn-primary">Simpan Perubahan</button>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-filter px-4" id="btnSimpanPerubahan">Simpan Perubahan</button>
+        <button type="button" class="btn btn-reset px-4" data-bs-dismiss="modal">Batal</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Modal Konfirmasi -->
+<div class="modal fade" id="konfirmasiModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center">
+      <div class="modal-body">
+        <h5>Apakah anda yakin ingin menyimpan perubahan?</h5>
+        <div class="mt-4 d-flex justify-content-center gap-3">
+          <button type="button" class="btn btn-konfirmasi-batal" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-konfirmasi-ya" id="konfirmasiYa">Iya</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -361,9 +451,44 @@ $result = $stmt->get_result();
 const ubahModal = document.getElementById('ubahModal');
 ubahModal.addEventListener('show.bs.modal', event => {
     const button = event.relatedTarget;
-    document.getElementById('id_order').value = button.getAttribute('data-id');
-    document.getElementById('tanggal_baru').value = button.getAttribute('data-tanggal');
-    document.getElementById('jam_baru').value = button.getAttribute('data-jam');
+    const idOrder = button.getAttribute('data-id');
+    const tanggal = button.getAttribute('data-tanggal');
+    const jam = button.getAttribute('data-jam');
+    const idStudio = button.getAttribute('data-studio');
+    
+    document.getElementById('id_order').value = idOrder;
+    document.getElementById('tanggal_baru').value = tanggal;
+    document.getElementById('jam_baru').value = jam;
+    document.getElementById('jadwal_lama').textContent = tanggal + ', ' + jam;
+    
+    // Set studio yang dipilih
+    if (idStudio) {
+        document.getElementById('studio_baru_select').value = idStudio;
+    }
+});
+
+// Handle tombol Simpan Perubahan untuk menampilkan modal konfirmasi
+document.getElementById('btnSimpanPerubahan').addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    // Validasi input
+    const tanggalBaru = document.getElementById('tanggal_baru').value;
+    const jamBaru = document.getElementById('jam_baru').value;
+    
+    if (!tanggalBaru || !jamBaru) {
+        alert('Tanggal dan jam tidak boleh kosong!');
+        return;
+    }
+    
+    // Tampilkan modal konfirmasi
+    const konfirmasiModal = new bootstrap.Modal(document.getElementById('konfirmasiModal'));
+    konfirmasiModal.show();
+});
+
+// Handle tombol Iya pada modal konfirmasi
+document.getElementById('konfirmasiYa').addEventListener('click', function() {
+    // Submit form
+    document.getElementById('formUbahJadwal').submit();
 });
 </script>
 </body>

@@ -166,7 +166,7 @@ session_start();
               
                 <div class="d-flex gap-2">
                   <a href="booking.php?studio=gold" class="btn btn-outline-primary flex-fill">Booking</a>
-                  <a href="jadwal.php?studio=gold" class="btn btn-outline-success flex-fill">Lihat Jadwal</a>
+                  <a href="lihat_jadwal.php?studio=gold" class="btn btn-outline-success flex-fill">Lihat Jadwal</a>
                 </div>
               </div>
             </div>
@@ -184,7 +184,7 @@ session_start();
 
                 <div class="d-flex gap-2">
                   <a href="booking.php?studio=bronze" class="btn btn-outline-primary flex-fill">Booking</a>
-                  <a href="jadwal.php?studio=bronze" class="btn btn-outline-success flex-fill">Lihat Jadwal</a>
+                  <a href="lihat_jadwal.php?studio=bronze" class="btn btn-outline-success flex-fill">Lihat Jadwal</a>
                 </div>
               </div>
             </div>
