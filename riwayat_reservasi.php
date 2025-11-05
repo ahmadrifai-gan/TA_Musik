@@ -226,20 +226,36 @@ if (isset($_GET['batal'])) {
                                 <td><?= htmlspecialchars($row['Tanggal']) ?></td>
                                 <td><?= htmlspecialchars($row['jam_booking']) ?></td>
                                 <td>Rp <?= number_format($row['total_tagihan'], 0, ',', '.') ?></td>
-                                <td>
-                                    <?php
-                                    if ($row['status'] === 'menunggu') echo "<span class='badge badge-warning p-2'>Menunggu Konfirmasi</span>";
-                                    elseif ($row['status'] === 'terkonfirmasi') echo "<span class='badge badge-success p-2'>Terkonfirmasi</span>";
-                                    else echo "<span class='badge badge-danger p-2'>Dibatalkan</span>";
-                                    ?>
-                                </td>
-                                <td>
-                                    <?php
-                                    if ($row['status'] === 'menunggu') echo "<span class='badge badge-danger p-2'>DP Belum Dibayar</span>";
-                                    elseif ($row['status'] === 'terkonfirmasi') echo "<span class='badge badge-success p-2'>DP Terbayar</span>";
-                                    else echo "<span class='badge badge-danger p-2'>Dibatalkan</span>";
-                                    ?>
-                                </td>
+                                <!-- Status Konfirmasi -->
+<td>
+    <?php
+    if ($row['status'] === 'menunggu') {
+        echo "<span class='badge badge-warning p-2'>Menunggu Konfirmasi</span>";
+    } elseif ($row['status'] === 'terkonfirmasi') {
+        echo "<span class='badge badge-success p-2'>Terkonfirmasi</span>";
+    } elseif ($row['status'] === 'dibatalkan') {
+        echo "<span class='badge badge-danger p-2'>Dibatalkan</span>";
+    } else {
+        echo "<span class='badge badge-secondary p-2'>Tidak Diketahui</span>";
+    }
+    ?>
+</td>
+
+<!-- Status Pembayaran -->
+<td>
+    <?php
+     if ($row['status_pembayaran'] === 'belum_dibayar') {
+        echo "<span class='badge badge-danger p-2'>DP Belum Dibayar</span>";
+     } elseif ($row['status_pembayaran'] === 'dp_dibayar') {
+        echo "<span class='badge badge-success p-2'>DP Terbayar</span>";
+     } elseif ($row['status_pembayaran'] === 'lunas') {
+        echo "<span class='badge badge-success p-2'>Lunas</span>";
+     } else {
+        echo "<span class='badge badge-secondary p-2'>Tidak Diketahui</span>";
+     }
+    ?>
+</td>
+
                                 <td>
                                     <?php if (!empty($row['bukti_dp'])): ?>
                                     <a href="uploads/bukti_dp/<?= urlencode($row['bukti_dp']) ?>" 
