@@ -30,11 +30,13 @@ $booking = $result->fetch_assoc();
 
 // Proses konfirmasi
 if (isset($_POST['konfirmasi'])) {
-    $update = $koneksi->prepare("UPDATE booking SET status = 'terkonfirmasi' WHERE id_order = ?");
+    // User hanya menandai bahwa booking dikirim, tapi status tetap menunggu
+    $update = $koneksi->prepare("UPDATE booking SET status = 'menunggu' WHERE id_order = ?");
     $update->bind_param("i", $booking['id_order']);
     $update->execute();
+
     echo "<script>
-        alert('Booking berhasil dikonfirmasi!');
+        alert('Booking telah dikirim! Tunggu konfirmasi dari admin.');
         window.location.href='riwayat_reservasi.php';
     </script>";
     exit;
