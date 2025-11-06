@@ -1,5 +1,10 @@
 <?php
 session_start();
+require_once 'koneksi.php'; // Pastikan file koneksi database ada
+
+// Ambil ulasan yang sudah diapprove
+$query_ulasan = "SELECT nama, email, pesan FROM ulasan WHERE status = 'approved' ORDER BY tanggal_submit DESC LIMIT 10";
+$result_ulasan = $conn->query($query_ulasan);
 ?>
 
 <!DOCTYPE html>
@@ -9,7 +14,7 @@ session_start();
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark light" />
-  <title>Studio — Premium Music Studio</title>
+  <title>Studio – Premium Music Studio</title>
   <meta name="description"
     content="Studio musik premium dengan ruang kedap suara, peralatan pro, dan engineer berpengalaman. Booking mudah, harga transparan." />
 
@@ -160,7 +165,7 @@ session_start();
                 style="background:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1600&auto=format&fit=crop') center/cover">
               </div>
               <div class="card-body">
-                <h3 class="h5">Studio A — Studio Gold</h3>
+                <h3 class="h5">Studio A – Studio Gold</h3>
                 <p class="text-secondary">Ruang live untuk band full, drum tracking, dan live session video.</p>
                <p>- Reguler = 50K/jam<br>- Paket 2 jam = 90K<br>- Paket 3 jam = 130K</p>
               
@@ -178,7 +183,7 @@ session_start();
                 style="background:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1600&auto=format&fit=crop') center/cover">
               </div>
               <div class="card-body">
-                <h3 class="h5">Studio B — Studio Bronze</h3>
+                <h3 class="h5">Studio B – Studio Bronze</h3>
                 <p class="text-secondary">Ruang live untuk band full, drum tracking, dan live session video.</p>
                 <p>Reguler = 35K/jam (ALL INCLUDE NO KEYBOARD)<br>+ KEYBOARD = 5K/jam</p>
 
@@ -201,55 +206,125 @@ session_start();
           <h2 class="fw-bold">Apa Kata Mereka</h2>
         </header>
 
-        <div id="testiCarousel" class="carousel slide" data-bs-ride="carousel">
-          <div class="carousel-inner">
-            <div class="carousel-item active">
-              <figure class="text-center p-4 border rounded-4 bg-light shadow-sm mx-auto" style="max-width:760px;">
-                <blockquote class="blockquote mb-2">"Tempatnya nyaman banget! Peralatannya lengkap dan suaranya mantap."</blockquote>
-                <figcaption class="blockquote-footer mb-0">Rian, <cite title="Musisi">Musisi</cite></figcaption>
-              </figure>
+        <?php if ($result_ulasan && $result_ulasan->num_rows > 0): ?>
+        <div class="position-relative">
+          <div id="testiCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+              <?php 
+              $counter = 0;
+              while($row = $result_ulasan->fetch_assoc()): 
+              ?>
+              <div class="carousel-item <?php echo $counter == 0 ? 'active' : ''; ?>">
+                <figure class="text-center p-4 border rounded-4 bg-light shadow-sm mx-auto" style="max-width:760px;">
+                  <blockquote class="blockquote mb-2">"<?php echo htmlspecialchars($row['pesan']); ?>"</blockquote>
+                  <figcaption class="blockquote-footer mb-0">
+                    <?php echo htmlspecialchars($row['nama']); ?>
+                  </figcaption>
+                </figure>
+              </div>
+              <?php 
+              $counter++;
+              endwhile; 
+              ?>
             </div>
-            <div class="carousel-item">
-              <figure class="text-center p-4 border rounded-4 bg-light shadow-sm mx-auto" style="max-width:760px;">
-                <blockquote class="blockquote mb-2">"Engineer-nya sangat membantu dan hasil recording-nya keren banget."</blockquote>
-                <figcaption class="blockquote-footer mb-0">Dinda, <cite title="Podcaster">Podcaster</cite></figcaption>
-              </figure>
+            
+            <!-- Carousel Indicators (dots) -->
+            <?php if ($result_ulasan->num_rows > 1): ?>
+            <div class="carousel-indicators position-static mt-3">
+              <?php for($i = 0; $i < $result_ulasan->num_rows; $i++): ?>
+              <button type="button" data-bs-target="#testiCarousel" data-bs-slide-to="<?php echo $i; ?>" 
+                      class="<?php echo $i == 0 ? 'active' : ''; ?>" 
+                      aria-current="<?php echo $i == 0 ? 'true' : 'false'; ?>" 
+                      aria-label="Slide <?php echo $i + 1; ?>">
+              </button>
+              <?php endfor; ?>
             </div>
+            <?php endif; ?>
           </div>
-          <button class="carousel-control-prev" type="button" data-bs-target="#testiCarousel" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-          </button>
-          <button class="carousel-control-next" type="button" data-bs-target="#testiCarousel" data-bs-slide="next">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-          </button>
+          
+          <!-- Navigation Buttons -->
+          <?php if ($result_ulasan->num_rows > 1): ?>
+          <div class="text-center mt-3">
+            <button class="btn btn-outline-primary rounded-circle me-2" type="button" data-bs-target="#testiCarousel" data-bs-slide="prev" style="width: 50px; height: 50px;">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="btn btn-outline-primary rounded-circle" type="button" data-bs-target="#testiCarousel" data-bs-slide="next" style="width: 50px; height: 50px;">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+          <?php endif; ?>
         </div>
+        <?php else: ?>
+        <div class="alert alert-info text-center">
+          <p class="mb-0">Belum ada testimoni. Jadilah yang pertama memberikan ulasan!</p>
+        </div>
+        <?php endif; ?>
       </div>
     </section>
 
     <!-- Lokasi -->
     <section id="testimonials" class="py-5 bg-body-secondary">
-      <div style="width:100%; height:400px; border-radius:10px; overflow:hidden;">
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3950.518820641404!2d113.70717147481444!3d-8.156332682104066!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd695dbb3cda6a9%3A0x4d056e98604f1da1!2sJl.%20Bedadung%20Blok%20Durenan%20No.30%2C%20Kp.%20Using%2C%20Jemberlor%2C%20Kec.%20Patrang%2C%20Kabupaten%20Jember%2C%20Jawa%20Timur%2068118!5e0!3m2!1sid!2sid!4v1698371782111!5m2!1sid!2sid"
-          width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade">
-        </iframe>
+      <div class="container-fluid px-3 px-md-5">
+        <header class="text-center mb-4">
+          <h2 class="fw-bold">Lokasi Kami</h2>
+        </header>
+        <div style="width:100%; height:400px; border-radius:10px; overflow:hidden;">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3950.518820641404!2d113.70717147481444!3d-8.156332682104066!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd695dbb3cda6a9%3A0x4d056e98604f1da1!2sJl.%20Bedadung%20Blok%20Durenan%20No.30%2C%20Kp.%20Using%2C%20Jemberlor%2C%20Kec.%20Patrang%2C%20Kabupaten%20Jember%2C%20Jawa%20Timur%2068118!5e0!3m2!1sid!2sid!4v1698371782111!5m2!1sid!2sid"
+            width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+        </div>
       </div>
     </section>
 
     <!-- Kontak -->
     <section id="contact" class="py-5 bg-white">
       <div class="container-fluid px-3 px-md-4">
+        
+        <!-- Alert Messages -->
+        <?php if (isset($_SESSION['success'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          <?php 
+          echo $_SESSION['success']; 
+          unset($_SESSION['success']);
+          ?>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php endif; ?>
+
+        <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <?php 
+          echo $_SESSION['error']; 
+          unset($_SESSION['error']);
+          ?>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php endif; ?>
+
         <div class="row g-3 align-items-stretch">
           <div class="col-md-6 d-flex justify-content-center align-items-center">
             <div class="text-center">
               <h5>HUBUNGI KAMI</h5>
               <h3>Ayo Diskusi Apa Kek</h3>
-              <p>DM Instagram '@reys_musicstudio' , WhatsApp '085606564811' , atau kirim pesan via formulir.</p>
+              <p>
+                DM Instagram 
+                <a href="https://www.instagram.com/reys_musicstudio" target="_blank" class="text-decoration-none fw-semibold text-primary">
+                  @reys_musicstudio
+                </a>,
+                WhatsApp 
+                <a href="https://wa.me/6285606564811" target="_blank" class="text-decoration-none fw-semibold text-success">
+                  085606564811
+                </a>,
+                atau kirim pesan via formulir.
+              </p>
             </div>
           </div>
           <div class="col-md-6">
-            <form class="border rounded-4 bg-white p-3 p-md-4 shadow-sm">
+            <form action="submit_ulasan.php" method="POST" class="border rounded-4 bg-white p-3 p-md-4 shadow-sm">
               <div class="mb-3">
                 <label for="name" class="form-label">Nama</label>
                 <input id="name" name="name" class="form-control" required placeholder="Nama lengkap Anda" />
@@ -259,11 +334,11 @@ session_start();
                 <input id="email" name="email" type="email" class="form-control" required placeholder="nama@email.com" />
               </div>
               <div class="mb-3">
-                <label for="message" class="form-label">Pesan</label>
+                <label for="message" class="form-label">Pesan / Ulasan</label>
                 <textarea id="message" name="message" rows="5" class="form-control" required
-                  placeholder="Ceritakan kebutuhan Anda"></textarea>
+                  placeholder="Ceritakan pengalaman atau kebutuhan Anda"></textarea>
               </div>
-              <button class="btn btn-primary w-100" type="submit">Kirim</button>
+              <button class="btn btn-primary w-100" type="submit">Kirim Ulasan</button>
             </form>
           </div>
         </div>
@@ -275,15 +350,16 @@ session_start();
   <!-- Footer -->
   <footer class="bg-dark text-white pt-5 pb-3">
     <div class="container text-center small">
-      <p class="mb-0">© <span data-year></span>Reys Music Studio. All rights reserved.</p>
+      <p class="mb-0">© <span id="year"></span> Reys Music Studio. All rights reserved.</p>
     </div>
   </footer>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Smooth Scroll -->
+  <!-- Smooth Scroll & Year -->
   <script>
+    // Smooth scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
         const target = document.querySelector(this.getAttribute('href'));
@@ -293,6 +369,9 @@ session_start();
         }
       });
     });
+
+    // Auto year
+    document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
