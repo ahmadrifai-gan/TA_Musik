@@ -9,6 +9,7 @@ class Studio {
         $this->conn = $koneksi;
     }
 
+
     // CREATE (dengan ID otomatis: ST001, ST002, dst)
     public function create($nama, $fasilitas, $harga) {
         // Ambil ID terakhir
@@ -114,3 +115,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah'])) {
     header('Location: ../admin/studio.php?status=invalid');
     exit;
 }
+
+
