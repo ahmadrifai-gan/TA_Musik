@@ -321,6 +321,31 @@ label { font-weight: 500; }
   font-size: 11px;
   font-weight: 500;
 }
+/* === Membuat tabel sudut melengkung === */
+.table {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Sudut atas */
+.table thead th:first-child {
+  border-top-left-radius: 10px;
+}
+.table thead th:last-child {
+  border-top-right-radius: 10px;
+}
+
+/* Sudut bawah */
+.table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 10px;
+}
+.table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 10px;
+}
+
 </style>
 
 <div class="content-body">

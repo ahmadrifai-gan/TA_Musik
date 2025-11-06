@@ -147,11 +147,20 @@ if (!empty($_GET['tanggal'])) {
 $where[] = "j.tanggal >= CURDATE()";
 $where_sql = "WHERE " . implode(" AND ", $where);
 
-$sql = "SELECT j.*, s.nama AS nama_studio 
-        FROM jadwal j 
-        JOIN studio s ON j.id_studio = s.id_studio 
-        $where_sql
-        ORDER BY j.tanggal ASC, j.jam_mulai ASC";
+$sql = "
+    SELECT 
+        j.*, 
+        s.nama AS nama_studio,
+        CASE 
+    WHEN b.id_order IS NOT NULL THEN 'Dibooking'
+    ELSE 'Belum Dibooking'
+END AS status
+    FROM jadwal j
+    JOIN studio s ON j.id_studio = s.id_studio
+    LEFT JOIN booking b ON j.id_jadwal = b.id_jadwal
+    $where_sql
+    ORDER BY j.tanggal ASC, j.jam_mulai ASC
+";
 $result = mysqli_query($koneksi, $sql);
 
 require "../master/header.php";
@@ -165,6 +174,7 @@ require "../master/sidebar.php";
     font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: 28px; 
+    margin-left: -30px;
     margin-bottom: 20px; 
     color: #222; 
 }
@@ -264,6 +274,31 @@ require "../master/sidebar.php";
   margin: 0;
   font-weight: 600;
 }
+/* === Membuat tabel sudut melengkung === */
+.table {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Sudut atas */
+.table thead th:first-child {
+  border-top-left-radius: 10px;
+}
+.table thead th:last-child {
+  border-top-right-radius: 10px;
+}
+
+/* Sudut bawah */
+.table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 10px;
+}
+.table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 10px;
+}
+
 </style>
 
 <div class="content-body">
