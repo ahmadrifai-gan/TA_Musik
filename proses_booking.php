@@ -58,6 +58,51 @@ if ($cek_tabel && $cek_tabel->num_rows > 0) {
     $jadwal_aktif = true;
 }
 
+// === CEK APAKAH SUDAH ADA BOOKING DI TANGGAL DAN JAM TERSEBUT ===
+// Ubah 'id_booking' → 'id_order' (karena itu nama kolom primary di tabel booking)
+$cekBooking = $koneksi->prepare("
+    SELECT id_order 
+    FROM booking 
+    WHERE id_studio = ? 
+      AND Tanggal = ? 
+      AND jam_booking = ? 
+      AND status != 'Dibatalkan'
+");
+$cekBooking->bind_param("sss", $id_studio, $tanggal, $jam_booking);
+$cekBooking->execute();
+$hasilCek = $cekBooking->get_result();
+
+if ($hasilCek && $hasilCek->num_rows > 0) {
+    echo "<script>
+        alert('Jam $jam_booking pada tanggal $tanggal sudah dibooking. Silakan pilih jam lain.');
+        window.history.back();
+    </script>";
+    exit;
+}
+
+// === JIKA FITUR JADWAL AKTIF, CEK JUGA DI TABEL JADWAL ===
+if ($jadwal_aktif) {
+    $cekJadwal = $koneksi->prepare("
+        SELECT id_jadwal 
+        FROM jadwal 
+        WHERE id_studio = ? 
+          AND Tanggal = ? 
+          AND jam_booking = ? 
+          AND status != 'dibatalkan'
+    ");
+    $cekJadwal->bind_param("sss", $id_studio, $tanggal, $jam_booking);
+    $cekJadwal->execute();
+    $hasilJadwal = $cekJadwal->get_result();
+
+    if ($hasilJadwal && $hasilJadwal->num_rows > 0) {
+        echo "<script>
+            alert('Jam $jam_booking sudah digunakan di jadwal studio ini. Silakan pilih jam lain.');
+            window.history.back();
+        </script>";
+        exit;
+    }
+}
+
 // === 1. JIKA FITUR JADWAL SUDAH ADA, PROSES NORMAL ===
 if ($jadwal_aktif) {
     $query_cek = $koneksi->prepare("
@@ -75,10 +120,9 @@ if ($jadwal_aktif) {
         } else {
             // Insert jadwal baru
             $insert_jadwal = $koneksi->prepare("
-    INSERT INTO jadwal (id_studio, Tanggal, jam_mulai, jam_selesai, jam_booking, status)
-    VALUES (?, ?, ?, ?, ?, 'diboking')
-");
-
+                INSERT INTO jadwal (id_studio, Tanggal, jam_mulai, jam_selesai, jam_booking, status)
+                VALUES (?, ?, ?, ?, ?, 'diboking')
+            ");
             if ($insert_jadwal) {
                 $insert_jadwal->bind_param("sssss", $id_studio, $tanggal, $jam_mulai, $jam_selesai, $jam_booking);
                 if ($insert_jadwal->execute()) {
@@ -105,7 +149,6 @@ if (!$stmt) {
     die("Error prepare insert booking: " . $koneksi->error);
 }
 
-// Jika id_jadwal NULL, ganti bind_param jadi "ssisss" atau "ssisss" tetap, tapi dengan null
 $stmt->bind_param("ssisss",
     $id_user,
     $id_studio,
