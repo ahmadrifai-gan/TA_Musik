@@ -27,11 +27,38 @@ if (isset($_POST['ubah_jadwal'])) {
     $tanggal_baru = $_POST['tanggal_baru'];
     $jam_baru = $_POST['jam_baru'];
     $studio_baru = $_POST['studio_baru'] ?? '';
+    $paket_baru = $_POST['paket_baru'] ?? '';
 
-    if (!empty($tanggal_baru) && !empty($jam_baru) && !empty($studio_baru)) {
-        // Update dengan studio juga - id_studio adalah VARCHAR
-        $updateJadwal = $koneksi->prepare("UPDATE booking SET Tanggal = ?, jam_booking = ?, id_studio = ? WHERE id_order = ? AND id_user = ?");
-        $updateJadwal->bind_param("sssii", $tanggal_baru, $jam_baru, $studio_baru, $id_order, $id_user);
+    if (!empty($tanggal_baru) && !empty($jam_baru) && !empty($studio_baru) && !empty($paket_baru)) {
+        
+        // ===== CEK APAKAH KOMBINASI STUDIO + TANGGAL + JAM + PAKET SUDAH ADA (EXACT MATCH) =====
+        $cekExact = $koneksi->prepare("
+            SELECT id_order 
+            FROM booking 
+            WHERE id_studio = ? 
+              AND Tanggal = ? 
+              AND jam_booking = ? 
+              AND paket = ?
+              AND status != 'dibatalkan'
+              AND id_order != ?
+            LIMIT 1
+        ");
+        $cekExact->bind_param("ssssi", $studio_baru, $tanggal_baru, $jam_baru, $paket_baru, $id_order);
+        $cekExact->execute();
+        $hasilExact = $cekExact->get_result();
+        
+        // JIKA KETIGANYA SAMA PERSIS → TOLAK
+        if ($hasilExact && $hasilExact->num_rows > 0) {
+            echo "<script>
+                alert('Kombinasi Studio, Jam, dan Paket yang sama sudah dibooking!\\n\\nSilakan ubah salah satu:\\n- Pilih studio berbeda, ATAU\\n- Pilih jam berbeda, ATAU\\n- Pilih paket berbeda');
+                window.history.back();
+            </script>";
+            exit;
+        }
+        
+        // ===== JIKA AMAN, LAKUKAN UPDATE =====
+        $updateJadwal = $koneksi->prepare("UPDATE booking SET Tanggal = ?, jam_booking = ?, id_studio = ?, paket = ? WHERE id_order = ? AND id_user = ?");
+        $updateJadwal->bind_param("ssssii", $tanggal_baru, $jam_baru, $studio_baru, $paket_baru, $id_order, $id_user);
         
         if ($updateJadwal->execute()) {
             $updateJadwal->close();
@@ -48,7 +75,7 @@ if (isset($_POST['ubah_jadwal'])) {
     }
 }
 
-// Aksi batal - HANYA update kolom status
+// Aksi batal
 if (isset($_GET['batal'])) {
     $id_order = $_GET['batal'];
     $update = $koneksi->prepare("UPDATE booking SET status = 'dibatalkan' WHERE id_order = ? AND id_user = ?");
@@ -62,7 +89,7 @@ if (isset($_GET['batal'])) {
     exit;
 }
 
-// Filter - hanya status pembayaran
+// Filter
 $filterStatusPembayaran = $_GET['status_pembayaran'] ?? '';
 $filterTanggalAwal = $_GET['tanggal_awal'] ?? '';
 $filterTanggalAkhir = $_GET['tanggal_akhir'] ?? '';
@@ -96,12 +123,10 @@ if (!empty($filterTanggalAwal) && !empty($filterTanggalAkhir)) {
     $types .= "s";
 }
 
-// Urutkan dan batasi jumlah data
 $query .= " ORDER BY Tanggal DESC LIMIT ?";
 $params[] = (int)$showEntries;
 $types .= "i";
 
-// Eksekusi query
 $stmt = $koneksi->prepare($query);
 $stmt->bind_param($types, ...$params);
 $stmt->execute();
@@ -166,8 +191,6 @@ $result = $stmt->get_result();
             font-size: 0.9rem;
             margin-top: 20px;
         }
-
-        /* Tambahan warna background untuk studio */
         .studio-gold {
             background-color: gold !important;
             color: black;
@@ -182,8 +205,36 @@ $result = $stmt->get_result();
             border-radius: 5px;
             padding: 5px 10px;
         }
-
-        /* Style untuk modal konfirmasi */
+        /* Style untuk badge paket */
+        .paket-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            line-height: 1.4;
+            text-align: center;
+        }
+        .paket-bronze-tanpa {
+            background-color: #e8daef;
+            color: #633974;
+        }
+        .paket-bronze-dengan {
+            background-color: #d7bde2;
+            color: #4a235a;
+        }
+        .paket-gold-reguler {
+            background-color: #fff9e6;
+            color: #b8860b;
+        }
+        .paket-gold-2jam {
+            background-color: #ffe680;
+            color: #856404;
+        }
+        .paket-gold-3jam {
+            background-color: #ffcc00;
+            color: #664d00;
+        }
         #konfirmasiModal .modal-dialog {
             max-width: 400px;
         }
@@ -281,6 +332,7 @@ $result = $stmt->get_result();
                         <th>Id Order</th>
                         <th>Nama</th>
                         <th>Studio</th>
+                        <th>Paket</th>
                         <th>Tanggal Booking</th>
                         <th>Jam Booking</th>
                         <th>Total Tagihan</th>
@@ -315,22 +367,86 @@ $result = $stmt->get_result();
                                     echo "<span class='$classStudio'>" . htmlspecialchars($namaStudio) . "</span>";
                                     ?>
                                 </td>
+                                <!-- KOLOM PAKET BARU -->
+                                <td>
+                                    <?php
+                                    $paket = $row['paket'] ?? '';
+                                    $classPaket = 'paket-badge';
+                                    $paketText = '';
+                                    
+                                    // Jika paket kosong atau hanya "-", tampilkan teks default
+                                    if (empty($paket) || $paket === '-' || $paket === 'without' || $paket === 'null') {
+                                        $paketText = '<span class="text-muted">Tidak ada info paket</span>';
+                                    }
+                                    // Studio Bronze
+                                    elseif (stripos($namaStudio, 'bronze') !== false) {
+                                        if (stripos($paket, 'tanpa') !== false || stripos($paket, 'without') !== false || stripos($paket, '35') !== false) {
+                                            $classPaket .= ' paket-bronze-tanpa';
+                                            $paketText = 'Tanpa Keyboard<br>(35K/jam)';
+                                        } elseif (stripos($paket, 'dengan') !== false || stripos($paket, 'with') !== false || stripos($paket, '40') !== false) {
+                                            $classPaket .= ' paket-bronze-dengan';
+                                            $paketText = 'Dengan Keyboard<br>(40K/jam)';
+                                        } else {
+                                            // Tampilkan paket apa adanya jika tidak cocok
+                                            $paketText = htmlspecialchars($paket);
+                                        }
+                                    }
+                                    // Studio Gold
+                                    elseif (stripos($namaStudio, 'gold') !== false) {
+                                        if (stripos($paket, 'reguler') !== false || stripos($paket, 'regular') !== false || stripos($paket, '50') !== false) {
+                                            $classPaket .= ' paket-gold-reguler';
+                                            $paketText = 'Reguler<br>(50K/jam)';
+                                        } elseif (stripos($paket, '2 jam') !== false || stripos($paket, '2jam') !== false || stripos($paket, '90') !== false) {
+                                            $classPaket .= ' paket-gold-2jam';
+                                            $paketText = 'Paket 2 jam<br>(90K)';
+                                        } elseif (stripos($paket, '3 jam') !== false || stripos($paket, '3jam') !== false || stripos($paket, '130') !== false) {
+                                            $classPaket .= ' paket-gold-3jam';
+                                            $paketText = 'Paket 3 jam<br>(130K)';
+                                        } else {
+                                            // Tampilkan paket apa adanya jika tidak cocok
+                                            $paketText = htmlspecialchars($paket);
+                                        }
+                                    }
+                                    // Studio lainnya
+                                    else {
+                                        $paketText = htmlspecialchars($paket);
+                                    }
+                                    
+                                    // Tampilkan badge hanya jika ada kelas paket yang valid
+                                    if ($classPaket !== 'paket-badge') {
+                                        echo "<span class='$classPaket'>" . $paketText . "</span>";
+                                    } else {
+                                        echo $paketText;
+                                    }
+                                    ?>
+                                </td>
                                 <td><?= htmlspecialchars($row['Tanggal']) ?></td>
                                 <td><?= htmlspecialchars($row['jam_booking']) ?></td>
                                 <td>Rp <?= number_format($row['total_tagihan'], 0, ',', '.') ?></td>
                                 <td>
                                     <?php
-                                    if ($row['status'] === 'menunggu') echo "<span class='badge badge-warning p-2'>Menunggu Konfirmasi</span>";
-                                    elseif ($row['status'] === 'terkonfirmasi') echo "<span class='badge badge-success p-2'>Terkonfirmasi</span>";
-                                    else echo "<span class='badge badge-danger p-2'>Dibatalkan</span>";
+                                    if ($row['status'] === 'menunggu') {
+                                        echo "<span class='badge badge-warning p-2'>Menunggu Konfirmasi</span>";
+                                    } elseif ($row['status'] === 'terkonfirmasi') {
+                                        echo "<span class='badge badge-success p-2'>Terkonfirmasi</span>";
+                                    } elseif ($row['status'] === 'dibatalkan') {
+                                        echo "<span class='badge badge-danger p-2'>Dibatalkan</span>";
+                                    } else {
+                                        echo "<span class='badge badge-secondary p-2'>Tidak Diketahui</span>";
+                                    }
                                     ?>
                                 </td>
                                 <td>
                                     <?php
-                                    if ($row['status_pembayaran'] === 'belum_dibayar') echo "<span class='badge badge-danger p-2'>Belum Dibayar</span>";
-                                    elseif ($row['status_pembayaran'] === 'dp_dibayar') echo "<span class='badge badge-success p-2'>DP Dibayar</span>";
-                                    elseif ($row['status_pembayaran'] === 'lunas') echo "<span class='badge badge-success p-2'>Lunas</span>";
-                                    else echo "<span class='badge badge-danger p-2'>-</span>";
+                                     if ($row['status_pembayaran'] === 'belum_dibayar') {
+                                        echo "<span class='badge badge-danger p-2'>DP Belum Dibayar</span>";
+                                     } elseif ($row['status_pembayaran'] === 'dp_dibayar') {
+                                        echo "<span class='badge badge-success p-2'>DP Terbayar</span>";
+                                     } elseif ($row['status_pembayaran'] === 'lunas') {
+                                        echo "<span class='badge badge-success p-2'>Lunas</span>";
+                                     } else {
+                                        echo "<span class='badge badge-secondary p-2'>Tidak Diketahui</span>";
+                                     }
                                     ?>
                                 </td>
                                 <td>
@@ -348,7 +464,8 @@ $result = $stmt->get_result();
                                                 data-id="<?= $row['id_order'] ?>"
                                                 data-tanggal="<?= $row['Tanggal'] ?>"
                                                 data-jam="<?= $row['jam_booking'] ?>"
-                                                data-studio="<?= $row['id_studio'] ?>">
+                                                data-studio="<?= $row['id_studio'] ?>"
+                                                data-paket="<?= htmlspecialchars($row['paket'] ?? '') ?>">
                                             Ubah Jadwal
                                         </button><br>
                                         <a href="?batal=<?= $row['id_order'] ?>" onclick="return confirm('Batalkan pesanan ini?')" class="btn btn-red btn-sm">Batalkan</a>
@@ -360,7 +477,7 @@ $result = $stmt->get_result();
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="10" class="text-muted">Belum ada reservasi ditemukan.</td>
+                            <td colspan="11" class="text-muted">Belum ada reservasi ditemukan.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -389,22 +506,20 @@ $result = $stmt->get_result();
         </div>
 
         <div class="mb-3">
-          <label class="form-label fw-semibold">Studio</label>
-          <select class="form-select" id="studio_select" disabled>
-            <option>Studio Gold</option>
-          </select>
+          <label class="form-label fw-semibold">Studio dan Paket Lama</label>
+          <p class="mb-0" id="studio_paket_lama">-</p>
         </div>
 
         <div class="mb-3">
           <label class="form-label fw-semibold">Tanggal dan jam booking lama</label>
-          <p class="mb-0" id="jadwal_lama">19/09/2025, 17.00-18.00</p>
+          <p class="mb-0" id="jadwal_lama">-</p>
         </div>
 
         <div class="mb-3">
           <label class="form-label fw-semibold">Pilih Studio</label>
-          <select class="form-select" name="studio_baru" id="studio_baru_select" required>
+          <select class="form-select" name="studio_baru" id="studio_baru_select" required onchange="updatePaketOptions()">
+            <option value="">-- Pilih Studio --</option>
             <?php
-            // Ambil semua studio dari database
             $studioQuery = $koneksi->query("SELECT id_studio, nama FROM studio");
             while ($studioRow = $studioQuery->fetch_assoc()) {
                 echo "<option value='" . $studioRow['id_studio'] . "'>" . htmlspecialchars($studioRow['nama']) . "</option>";
@@ -414,13 +529,20 @@ $result = $stmt->get_result();
         </div>
 
         <div class="mb-3">
+          <label class="form-label fw-semibold">Pilih Paket</label>
+          <select class="form-select" name="paket_baru" id="paket_baru_select" required>
+            <option value="">-- Pilih Studio Terlebih Dahulu --</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
           <label class="form-label fw-semibold">Pilih Tanggal Baru</label>
-          <input type="date" name="tanggal_baru" id="tanggal_baru" class="form-control" placeholder="dd/mm/yy" required>
+          <input type="date" name="tanggal_baru" id="tanggal_baru" class="form-control" required>
         </div>
 
         <div class="mb-3">
           <label class="form-label fw-semibold">Pilih Jam Baru</label>
-          <input type="text" name="jam_baru" id="jam_baru" class="form-control" placeholder="--:--" required>
+          <input type="text" name="jam_baru" id="jam_baru" class="form-control" placeholder="Contoh: 15.00-16.00" required>
         </div>
       </div>
       <div class="modal-footer justify-content-center">
@@ -448,6 +570,46 @@ $result = $stmt->get_result();
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// Data paket untuk setiap studio
+const paketStudio = {
+    'bronze': [
+        { value: 'Tanpa Keyboard (35K/jam)', text: 'Tanpa Keyboard (35K/jam)' },
+        { value: 'Dengan Keyboard (40K/jam)', text: 'Dengan Keyboard (40K/jam)' }
+    ],
+    'gold': [
+        { value: 'Reguler (50K/jam)', text: 'Reguler (50K/jam)' },
+        { value: 'Paket 2 jam (90K)', text: 'Paket 2 jam (90K)' },
+        { value: 'Paket 3 jam (130K)', text: 'Paket 3 jam (130K)' }
+    ]
+};
+
+function updatePaketOptions() {
+    const studioSelect = document.getElementById('studio_baru_select');
+    const paketSelect = document.getElementById('paket_baru_select');
+    const selectedText = studioSelect.options[studioSelect.selectedIndex].text.toLowerCase();
+    
+    // Kosongkan opsi paket
+    paketSelect.innerHTML = '<option value="">-- Pilih Paket --</option>';
+    
+    // Tentukan jenis studio
+    let jenisPaket = null;
+    if (selectedText.includes('bronze')) {
+        jenisPaket = 'bronze';
+    } else if (selectedText.includes('gold')) {
+        jenisPaket = 'gold';
+    }
+    
+    // Tambahkan opsi paket sesuai studio
+    if (jenisPaket && paketStudio[jenisPaket]) {
+        paketStudio[jenisPaket].forEach(paket => {
+            const option = document.createElement('option');
+            option.value = paket.value;
+            option.textContent = paket.text;
+            paketSelect.appendChild(option);
+        });
+    }
+}
+
 const ubahModal = document.getElementById('ubahModal');
 ubahModal.addEventListener('show.bs.modal', event => {
     const button = event.relatedTarget;
@@ -455,6 +617,7 @@ ubahModal.addEventListener('show.bs.modal', event => {
     const tanggal = button.getAttribute('data-tanggal');
     const jam = button.getAttribute('data-jam');
     const idStudio = button.getAttribute('data-studio');
+    const paket = button.getAttribute('data-paket');
     
     document.getElementById('id_order').value = idOrder;
     document.getElementById('tanggal_baru').value = tanggal;
@@ -464,19 +627,37 @@ ubahModal.addEventListener('show.bs.modal', event => {
     // Set studio yang dipilih
     if (idStudio) {
         document.getElementById('studio_baru_select').value = idStudio;
+        updatePaketOptions();
+        
+        // Set paket yang dipilih
+        if (paket) {
+            setTimeout(() => {
+                const paketSelect = document.getElementById('paket_baru_select');
+                for (let i = 0; i < paketSelect.options.length; i++) {
+                    if (paketSelect.options[i].value.includes(paket) || paket.includes(paketSelect.options[i].value.split('(')[0].trim())) {
+                        paketSelect.value = paketSelect.options[i].value;
+                        break;
+                    }
+                }
+            }, 100);
+        }
     }
+    
+    // Tampilkan info studio dan paket lama
+    const studioText = button.closest('tr').querySelector('td:nth-child(3)').textContent.trim();
+    document.getElementById('studio_paket_lama').textContent = studioText + ' - ' + (paket || 'Tidak ada info paket');
 });
 
-// Handle tombol Simpan Perubahan untuk menampilkan modal konfirmasi
 document.getElementById('btnSimpanPerubahan').addEventListener('click', function(e) {
     e.preventDefault();
     
-    // Validasi input
     const tanggalBaru = document.getElementById('tanggal_baru').value;
     const jamBaru = document.getElementById('jam_baru').value;
+    const studioBaru = document.getElementById('studio_baru_select').value;
+    const paketBaru = document.getElementById('paket_baru_select').value;
     
-    if (!tanggalBaru || !jamBaru) {
-        alert('Tanggal dan jam tidak boleh kosong!');
+    if (!tanggalBaru || !jamBaru || !studioBaru || !paketBaru) {
+        alert('Semua field harus diisi!');
         return;
     }
     
