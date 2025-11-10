@@ -75,8 +75,10 @@ if ($studio === 'bronze') {
 function getDurasiPaket() {
   const paket = document.querySelector("input[name='paket']:checked");
   if (!paket) return 0;
-  if (paket.value === "paket2") return 2;
-  if (paket.value === "paket3") return 3;
+  const val = paket.value;
+  // Cek jika paket 2 jam atau 3 jam
+  if (val.includes('2 jam') || val.includes('2jam')) return 2;
+  if (val.includes('3 jam') || val.includes('3jam')) return 3;
   return 1;
 }
 
@@ -123,12 +125,13 @@ function updateBooking() {
   let total = 0;
 
   if (paket) {
+    const val = paket.value;
     if (studio === "bronze") {
-      total = (paket.value === "without" ? 35000 : 40000) * durasi;
+      total = (val.includes('Tanpa') || val.includes('35') ? 35000 : 40000) * durasi;
     } else if (studio === "gold") {
-      if (paket.value === "reguler") total = 50000 * durasi;
-      else if (paket.value === "paket2") total = 90000;
-      else if (paket.value === "paket3") total = 130000;
+      if (val.includes('Reguler') || val.includes('50')) total = 50000 * durasi;
+      else if (val.includes('2 jam') || val.includes('90')) total = 90000;
+      else if (val.includes('3 jam') || val.includes('130')) total = 130000;
     }
   }
 
@@ -174,16 +177,16 @@ document.addEventListener("DOMContentLoaded", () => {
           <input type="hidden" name="nama" value="<?= htmlspecialchars($namaLengkap) ?>">
         </div>
 
-        <!-- Paket -->
+        <!-- 🔥 PERBAIKAN: UBAH VALUE PAKET AGAR SESUAI DENGAN DATABASE -->
         <div class="mb-3">
           <label class="form-label">Paket</label><br>
           <?php if ($studio == "bronze"): ?>
-            <input type="radio" name="paket" value="without" required> Tanpa Keyboard (35K/jam)<br>
-            <input type="radio" name="paket" value="with"> Dengan Keyboard (40K/jam)
+            <input type="radio" name="paket" value="Tanpa Keyboard (35K/jam)" required> Tanpa Keyboard (35K/jam)<br>
+            <input type="radio" name="paket" value="Dengan Keyboard (40K/jam)"> Dengan Keyboard (40K/jam)
           <?php else: ?>
-            <input type="radio" name="paket" value="reguler" required> Reguler (50K/jam)<br>
-            <input type="radio" name="paket" value="paket2"> Paket 2 jam (90K)<br>
-            <input type="radio" name="paket" value="paket3"> Paket 3 jam (130K)
+            <input type="radio" name="paket" value="Reguler (50K/jam)" required> Reguler (50K/jam)<br>
+            <input type="radio" name="paket" value="Paket 2 jam (90K)"> Paket 2 jam (90K)<br>
+            <input type="radio" name="paket" value="Paket 3 jam (130K)"> Paket 3 jam (130K)
           <?php endif; ?>
         </div>
 
