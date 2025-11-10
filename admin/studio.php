@@ -31,6 +31,7 @@ if ($result) {
 ?>
 
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
   * {
     font-family: 'Poppins', sans-serif;
   }
@@ -49,9 +50,10 @@ if ($result) {
   }
 
   .page-header h4 {
-    font-size: 24px;
-    font-weight: 600;
-    color: #2c3e50;
+    font-size: 28px;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 20px;
     margin: 0;
   }
 
