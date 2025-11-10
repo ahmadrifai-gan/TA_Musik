@@ -1,26 +1,3 @@
-<div class="nav-header" style="background-color: #ffffff; padding: 10px 20px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #ddd;">
-  <div class="brand-logo" style="display: flex; align-items: center;">
-    <a href="index.php" style="display: flex; align-items: center; text-decoration: none;">
-      <!-- Logo kecil -->
-      <b class="logo-abbr" style="margin-right: 12px;">
-        <img src="../assets/image/logo2.png" alt="Logo" style="width: 75px; height: 50px; border-radius: 10px; object-fit: cover;">
-      </b>
-
-      <!-- Logo compact -->
-      <span class="logo-compact" style="display: none;">
-        <img src="../assets/image/logo2.png" alt="Logo">
-      </span>
-
-      <!-- Nama brand -->
-      <span class="brand-title" style="color: #0D1321;">
-        <h4 style="font-size: 20px; margin: 0; color: #ffffffff; font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;"><b>Reys Studio Musik</b></h4>
-      </span>
-    </a>
-  </div>
-</div>
-
-
-
 
 
 

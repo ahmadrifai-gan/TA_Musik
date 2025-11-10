@@ -7587,7 +7587,7 @@ sub {
   position: absolute;
   left: 0;
   top: 0;
-  background: #111B27;
+  background: black;
   box-shadow: 0 1px 10px rgba(0, 0, 0, 0.15);
   transition: all .2s ease; }
   .nav-header .logo-abbr {
@@ -7677,7 +7677,7 @@ sub {
   z-index: 1;
   position: relative;
   padding: 0 0.9375rem;
-  background: #fff;
+  background: #000;
   margin-left: 15.1875rem;
   transition: all .2s ease; }
   .header .header-content {
@@ -14047,11 +14047,11 @@ html[dir="rtl"] [direction="rtl"][data-sidebar-style="compact"]:not([data-layout
   color: #fff !important; }
 
 [data-headerbg="color_3"] .header, [data-headerbg="color_3"] .header-left input {
-  background-color: #6a1b9a !important;
+  background-color: #000 !important;
   color: #fff !important; }
 
 [data-headerbg="color_4"] .header, [data-headerbg="color_4"] .header-left input {
-  background-color: #4527a0 !important;
+  background-color: #000 !important;
   color: #fff !important; }
 
 [data-headerbg="color_5"] .header, [data-headerbg="color_5"] .header-left input {

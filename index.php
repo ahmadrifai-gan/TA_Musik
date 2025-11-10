@@ -3,8 +3,8 @@ session_start();
 require_once 'koneksi.php'; // Pastikan file koneksi database ada
 
 // Ambil ulasan yang sudah diapprove
-$query_ulasan = "SELECT nama, email, pesan FROM ulasan WHERE status = 'approved' ORDER BY tanggal_submit DESC LIMIT 10";
-$result_ulasan = $conn->query($query_ulasan);
+// $query_ulasan = "SELECT nama, email, pesan FROM ulasan WHERE status = 'approved' ORDER BY tanggal_submit DESC LIMIT 10";
+// $result_ulasan = $conn->query($query_ulasan);
 ?>
 
 <!DOCTYPE html>
