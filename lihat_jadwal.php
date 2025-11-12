@@ -24,9 +24,9 @@ if ($studio_param === 'gold') {
     exit;
 }
 
-// Ambil booking yang sudah ada untuk studio ini (status tidak dibatalkan)
+// 🔥 PERBAIKAN: Ambil booking beserta paket
 $bookings = [];
-$queryBooking = $koneksi->prepare("SELECT Tanggal, jam_booking FROM booking WHERE id_studio = ? AND status != 'dibatalkan'");
+$queryBooking = $koneksi->prepare("SELECT Tanggal, jam_booking, paket FROM booking WHERE id_studio = ? AND status NOT IN ('dibatalkan', 'selesai')");
 $queryBooking->bind_param("s", $id_studio);
 $queryBooking->execute();
 $resultBooking = $queryBooking->get_result();
@@ -35,7 +35,8 @@ if ($resultBooking) {
     while ($row = $resultBooking->fetch_assoc()) {
         $bookings[] = [
             'tanggal' => $row['Tanggal'],
-            'jam' => $row['jam_booking']
+            'jam' => $row['jam_booking'],
+            'paket' => $row['paket'] ?? ''
         ];
     }
 }
@@ -194,11 +195,14 @@ $queryBooking->close();
             transition: all 0.3s;
             font-weight: 500;
             font-size: 0.9rem;
+            position: relative;
         }
         .time-slot:hover:not(.booked) {
             border-color: #0066ff;
             background: #f0f7ff;
         }
+        
+        /* 🔥 STYLE UNTUK PAKET BERBEDA */
         .time-slot.booked {
             background: #ffe0e0;
             border-color: #ff4d4d;
@@ -209,12 +213,40 @@ $queryBooking->close();
             background: #e8f5e9;
             border-color: #4caf50;
         }
+        
+        /* Badge paket */
+        .paket-badge {
+            display: block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 6px;
+            text-align: center;
+        }
+        .paket-1jam {
+            background: #ffcdd2;
+            color: #c62828;
+            border: 1px solid #ef5350;
+        }
+        .paket-2jam {
+            background: #ff8a80;
+            color: #b71c1c;
+            border: 1px solid #f44336;
+        }
+        .paket-3jam {
+            background: #ff5252;
+            color: #fff;
+            border: 1px solid #d32f2f;
+        }
+        
         .legend {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid #e0e0e0;
+            flex-wrap: wrap;
         }
         .legend-item {
             display: flex;
@@ -304,12 +336,12 @@ $queryBooking->close();
                 
                 <div class="legend">
                     <div class="legend-item">
-                        <div class="legend-box booked"></div>
-                        <span>Sudah dibooking</span>
+                        <div class="legend-box available"></div>
+                        <span>Tersedia</span>
                     </div>
                     <div class="legend-item">
-                        <div class="legend-box available"></div>
-                        <span>Belum dibooking</span>
+                        <div class="legend-box booked"></div>
+                        <span>Sudah dibooking</span>
                     </div>
                 </div>
             </div>
@@ -324,11 +356,15 @@ $queryBooking->close();
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Data booking dari PHP (data yang sudah dibooking)
+// 🔥 Data booking dari PHP (termasuk paket)
 const bookingsData = <?= json_encode($bookings) ?>;
 const studioParam = '<?= $studio_param ?>';
 
-console.log('Bookings Data:', bookingsData); // Debug
+console.log('=== DEBUG INFO ===');
+console.log('Studio:', studioParam);
+console.log('Total Bookings:', bookingsData.length);
+console.log('Bookings Data:', bookingsData);
+console.log('==================');
 
 // Time slots available
 const timeSlots = [
@@ -348,17 +384,133 @@ function formatDate(date) {
     return `${year}-${month}-${day}`;
 }
 
-// Check if time slot is booked
-function isBooked(date, time) {
-    const dateStr = formatDate(date);
-    const isBookedSlot = bookingsData.some(booking => {
-        const match = booking.tanggal === dateStr && booking.jam === time;
-        if (match) {
-            console.log('Found booked slot:', dateStr, time);
+// 🔥 FUNGSI BARU: Deteksi paket dari string
+function detectPaket(paketStr) {
+    if (!paketStr) return null;
+    
+    const paket = paketStr.toLowerCase();
+    
+    // Untuk Studio Gold
+    if (studioParam === 'gold') {
+        if (paket.includes('3 jam') || paket.includes('3jam') || paket.includes('130')) {
+            return '3jam';
         }
-        return match;
+        if (paket.includes('2 jam') || paket.includes('2jam') || paket.includes('90')) {
+            return '2jam';
+        }
+        if (paket.includes('reguler') || paket.includes('50')) {
+            return '1jam';
+        }
+    }
+    
+    // Untuk Studio Bronze
+    if (studioParam === 'bronze') {
+        if (paket.includes('keyboard') || paket.includes('40')) {
+            return 'dengan-keyboard';
+        }
+        if (paket.includes('tanpa') || paket.includes('35')) {
+            return 'tanpa-keyboard';
+        }
+    }
+    
+    return null;
+}
+
+// 🔥 FUNGSI BARU: Parse jam dari string "HH.MM-HH.MM" atau "HH:MM-HH:MM"
+function parseJamRange(jamStr) {
+    if (!jamStr) return null;
+    
+    // Normalize format (ganti : dengan .)
+    jamStr = jamStr.replace(/:/g, '.').trim();
+    
+    const parts = jamStr.split('-');
+    if (parts.length !== 2) return null;
+    
+    return {
+        start: parts[0].trim(),
+        end: parts[1].trim(),
+        raw: jamStr
+    };
+}
+
+// 🔥 FUNGSI BARU: Convert jam ke menit untuk perbandingan lebih mudah
+function jamToMinutes(jamStr) {
+    // Format: "10.00" atau "10:00"
+    const cleaned = jamStr.replace(/[:.]/g, '');
+    const hours = parseInt(cleaned.substring(0, 2));
+    const minutes = parseInt(cleaned.substring(2, 4) || '0');
+    return hours * 60 + minutes;
+}
+
+// 🔥 FUNGSI BARU: Cek apakah time slot termasuk dalam range booking
+function isTimeInRange(timeSlot, bookingJam) {
+    const slotRange = parseJamRange(timeSlot);
+    const bookingRange = parseJamRange(bookingJam);
+    
+    if (!slotRange || !bookingRange) {
+        console.log('Parse failed:', { timeSlot, bookingJam, slotRange, bookingRange });
+        return false;
+    }
+    
+    // Convert to minutes for easier comparison
+    const slotStart = jamToMinutes(slotRange.start);
+    const slotEnd = jamToMinutes(slotRange.end);
+    const bookStart = jamToMinutes(bookingRange.start);
+    const bookEnd = jamToMinutes(bookingRange.end);
+    
+    console.log('Time comparison:', {
+        slot: `${slotRange.start}-${slotRange.end} (${slotStart}-${slotEnd} min)`,
+        booking: `${bookingRange.start}-${bookingRange.end} (${bookStart}-${bookEnd} min)`,
+        overlap: (slotStart >= bookStart && slotStart < bookEnd)
     });
-    return isBookedSlot;
+    
+    // Check if slot overlaps with booking
+    // Slot is booked if: (slotStart >= bookStart && slotStart < bookEnd)
+    return (slotStart >= bookStart && slotStart < bookEnd);
+}
+
+// 🔥 FUNGSI BARU: Cek apakah slot sudah dibooking (dengan detail paket)
+function getBookingInfo(date, time) {
+    const dateStr = formatDate(date);
+    
+    console.log(`\n=== Checking slot: ${time} on ${dateStr} ===`);
+    
+    const bookings = bookingsData.filter(booking => {
+        console.log(`Comparing with booking:`, {
+            bookingDate: booking.tanggal,
+            bookingJam: booking.jam,
+            bookingPaket: booking.paket
+        });
+        
+        // Exact match dulu
+        if (booking.tanggal === dateStr && booking.jam === time) {
+            console.log('✅ EXACT MATCH FOUND!');
+            return true;
+        }
+        
+        // Cek overlap untuk paket multi-jam
+        if (booking.tanggal === dateStr && isTimeInRange(time, booking.jam)) {
+            console.log('✅ OVERLAP FOUND!');
+            return true;
+        }
+        
+        return false;
+    });
+    
+    console.log(`Result: ${bookings.length} booking(s) found`);
+    
+    if (bookings.length > 0) {
+        return {
+            isBooked: true,
+            bookings: bookings.map(b => ({
+                paket: b.paket,
+                paketType: detectPaket(b.paket),
+                jamFull: b.jam
+            }))
+        };
+    }
+    
+    return { isBooked: false, bookings: [] };
 }
 
 // Render calendar
@@ -445,7 +597,7 @@ function selectDate(date) {
         'Jadwal untuk: ' + date.toLocaleDateString('id-ID', options);
 }
 
-// Render time slots
+// 🔥 RENDER TIME SLOTS DENGAN DETEKSI PAKET
 function renderTimeSlots() {
     const container = document.getElementById('timeSlots');
     container.innerHTML = '';
@@ -460,16 +612,40 @@ function renderTimeSlots() {
     
     timeSlots.forEach(time => {
         const slot = document.createElement('div');
-        const booked = isBooked(selectedDate, time);
+        const bookingInfo = getBookingInfo(selectedDate, time);
         
-        slot.className = `time-slot ${booked ? 'booked' : 'available'}`;
-        slot.textContent = time;
+        console.log(`Checking slot ${time}:`, bookingInfo); // Debug
         
-        if (booked) {
-            slot.innerHTML = time + '<br><small>Sudah dibooking</small>';
-        }
-        
-        if (!booked) {
+        if (bookingInfo.isBooked) {
+            slot.className = 'time-slot booked';
+            
+            let html = `<div style="font-weight: 600;">${time}</div>`;
+            
+            // Tampilkan info paket untuk setiap booking
+            bookingInfo.bookings.forEach(booking => {
+                if (studioParam === 'gold') {
+                    if (booking.paketType === '1jam') {
+                        html += '<div class="paket-badge paket-1jam">Reguler 1 jam</div>';
+                    } else if (booking.paketType === '2jam') {
+                        html += '<div class="paket-badge paket-2jam">Paket 2 jam</div>';
+                    } else if (booking.paketType === '3jam') {
+                        html += '<div class="paket-badge paket-3jam">Paket 3 jam</div>';
+                    } else {
+                        // Fallback jika tidak terdeteksi
+                        html += `<div class="paket-badge paket-1jam">${booking.paket || 'Dibooking'}</div>`;
+                    }
+                } else if (studioParam === 'bronze') {
+                    const paketText = booking.paket || 'Dibooking';
+                    html += `<div class="paket-badge paket-1jam">${paketText}</div>`;
+                }
+            });
+            
+            slot.innerHTML = html;
+            
+        } else {
+            slot.className = 'time-slot available';
+            slot.innerHTML = `<div style="font-weight: 600;">${time}</div><small style="color: #2e7d32; font-size: 0.75rem;">Tersedia</small>`;
+            
             slot.addEventListener('click', () => {
                 if (confirm(`Ingin booking jam ${time}?\n\nKlik OK untuk melanjutkan ke halaman booking.`)) {
                     window.location.href = 'booking.php?studio=' + studioParam;
