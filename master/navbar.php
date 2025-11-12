@@ -1,6 +1,3 @@
-
-
-
 <!--**********************************
             Nav header end
         ***********************************-->
@@ -16,7 +13,7 @@
                 <span class="toggle-icon"><i class="icon-menu"></i></span>
             </div>
         </div>
-        <div class="header-left">
+        <!-- <div class="header-left">
             <div class="input-group icons">
                 <div class="input-group-prepend">
                     <span class="input-group-text bg-transparent border-0 pr-2 pr-sm-3" id="basic-addon1"><i
@@ -29,164 +26,25 @@
                     </form>
                 </div>
             </div>
-        </div> 
+        </div>  -->
         <div class="header-right">
             <ul class="clearfix">
-                    <!-- <div class="drop-down animated fadeIn dropdown-menu">
-                        <div class="dropdown-content-heading d-flex justify-content-between">
-                            <span class="">3 New Messages</span>
-                            <a href="javascript:void()" class="d-inline-block">
-                                <span class="badge badge-pill gradient-1">3</span>
-                            </a>
-                        </div>
-                        <div class="dropdown-content-body">
-                            <ul>
-                                <li class="notification-unread">
-                                    <a href="javascript:void()">
-                                        <img class="float-left mr-3 avatar-img" src="images/avatar/1.jpg" alt="">
-                                        <div class="notification-content">
-                                            <div class="notification-heading">Saiful Islam</div>
-                                            <div class="notification-timestamp">08 Hours ago</div>
-                                            <div class="notification-text">Hi Teddy, Just wanted to let you ...</div>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li class="notification-unread">
-                                    <a href="javascript:void()">
-                                        <img class="float-left mr-3 avatar-img" src="images/avatar/2.jpg" alt="">
-                                        <div class="notification-content">
-                                            <div class="notification-heading">Adam Smith</div>
-                                            <div class="notification-timestamp">08 Hours ago</div>
-                                            <div class="notification-text">Can you do me a favour?</div>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="javascript:void()">
-                                        <img class="float-left mr-3 avatar-img" src="images/avatar/3.jpg" alt="">
-                                        <div class="notification-content">
-                                            <div class="notification-heading">Barak Obama</div>
-                                            <div class="notification-timestamp">08 Hours ago</div>
-                                            <div class="notification-text">Hi Teddy, Just wanted to let you ...</div>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="javascript:void()">
-                                        <img class="float-left mr-3 avatar-img" src="images/avatar/4.jpg" alt="">
-                                        <div class="notification-content">
-                                            <div class="notification-heading">Hilari Clinton</div>
-                                            <div class="notification-timestamp">08 Hours ago</div>
-                                            <div class="notification-text">Hello</div>
-                                        </div>
-                                    </a>
-                                </li>
-                            </ul>
-
-                        </div>
-                    </div> -->
-                <!-- </li> -->
-                <!-- <li class="icons dropdown"><a href="javascript:void(0)" data-toggle="dropdown">
-                        <i class="mdi mdi-bell-outline"></i>
-                        <span class="badge badge-pill gradient-2">3</span>
-                    </a> -->
-                    <!-- <div class="drop-down animated fadeIn dropdown-menu dropdown-notfication">
-                        <div class="dropdown-content-heading d-flex justify-content-between">
-                            <span class="">2 New Notifications</span>
-                            <a href="javascript:void()" class="d-inline-block">
-                                <span class="badge badge-pill gradient-2">5</span>
-                            </a>
-                        </div>
-                        <div class="dropdown-content-body">
-                            <ul>
-                                <li>
-                                    <a href="javascript:void()">
-                                        <span class="mr-3 avatar-icon bg-success-lighten-2"><i
-                                                class="icon-present"></i></span>
-                                        <div class="notification-content">
-                                            <h6 class="notification-heading">Events near you</h6>
-                                            <span class="notification-text">Within next 5 days</span>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="javascript:void()">
-                                        <span class="mr-3 avatar-icon bg-danger-lighten-2"><i
-                                                class="icon-present"></i></span>
-                                        <div class="notification-content">
-                                            <h6 class="notification-heading">Event Started</h6>
-                                            <span class="notification-text">One hour ago</span>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="javascript:void()">
-                                        <span class="mr-3 avatar-icon bg-success-lighten-2"><i
-                                                class="icon-present"></i></span>
-                                        <div class="notification-content">
-                                            <h6 class="notification-heading">Event Ended Successfully</h6>
-                                            <span class="notification-text">One hour ago</span>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="javascript:void()">
-                                        <span class="mr-3 avatar-icon bg-danger-lighten-2"><i
-                                                class="icon-present"></i></span>
-                                        <div class="notification-content">
-                                            <h6 class="notification-heading">Events to Join</h6>
-                                            <span class="notification-text">After two days</span>
-                                        </div>
-                                    </a>
-                                </li>
-                            </ul>
-
-                        </div>
-                    </div> -->
-                <!-- </li>
-                <li class="icons dropdown d-none d-md-flex">
-                    <a href="javascript:void(0)" class="log-user" data-toggle="dropdown">
-                        <span>English</span> <i class="fa fa-angle-down f-s-14" aria-hidden="true"></i>
-                    </a>
-                    <div class="drop-down dropdown-language animated fadeIn  dropdown-menu">
-                        <div class="dropdown-content-body">
-                            <ul>
-                                <li><a href="javascript:void()">English</a></li>
-                                <li><a href="javascript:void()">Dutch</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </li> -->
                 <li class="icons dropdown">
-                    <div class="user-img c-pointer position-relative" data-toggle="dropdown">
+                    <div class="user-icon-wrapper c-pointer position-relative" data-toggle="dropdown">
                         <span class="activity active"></span>
-                        <img src="../assets/admin/images/user/1.png" height="40" width="40" alt="">
+                        <div class="user-icon-circle">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
                     </div>
                     <div class="drop-down dropdown-profile animated fadeIn dropdown-menu">
                         <div class="dropdown-content-body">
                             <ul>
                                 <li>
-                                    <a href="app-profile.html"><i class="icon-user"></i> <span>Profile</span></a>
+                                    <a href="profile.php"><i class="icon-user"></i> <span>Profile</span></a>
                                 </li>
-                                <!-- <li>
-                                    <a href="javascript:void()">
-                                        <i class="icon-envelope-open"></i> <span>Inbox</span>
-                                        <div class="badge gradient-3 badge-pill gradient-1">3</div>
-                                    </a>
-                                </li> -->
-
-                                <!-- <hr class="my-2">
                                 <li>
-                                    <a href="page-lock.html"><i class="icon-lock"></i> <span>Lock Screen</span></a>
-                                </li> -->
-                                <li><a href="../index.php"  onclick="confirmLogout()"><i class="icon-key"></i> <span>Logout</span></a></li>
-                                <script>
-                                    function confirmLogout() {
-                                        if (confirm("Apakah Anda yakin ingin logout?")) {
-                                            window.location.href = "../logout.php";
-                                        }
-                                    }
-                                </script>
+                                    <a href="#" onclick="confirmLogout(event)"><i class="icon-key"></i> <span>Logout</span></a>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -198,3 +56,103 @@
 <!--**********************************
             Header end ti-comment-alt
         ***********************************-->
+
+<style>
+/* Hamburger Menu Position */
+.nav-control {
+    margin-left: 10px;
+}
+
+#hamburger {
+    cursor: pointer;
+    padding: 10px;
+    transition: all 0.3s ease;
+}
+
+#hamburger:hover {
+    transform: scale(1.1);
+}
+
+.toggle-icon i {
+    font-size: 24px;
+    color: #333;
+    transition: color 0.3s ease;
+}
+
+#hamburger:hover .toggle-icon i {
+    color: #ffd700;
+}
+
+/* User Icon Styling */
+.user-icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 30px;
+}
+
+.user-icon-circle {
+    width: 40px;
+    height: 40px;
+    background-color: #f0f0f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    border: 2px solid #e0e0e0;
+}
+
+.user-icon-circle:hover {
+    background-color: #ffd700;
+    border-color: #ffd700;
+    transform: scale(1.05);
+}
+
+.user-icon-circle i {
+    font-size: 18px;
+    color: #333;
+    transition: color 0.3s ease;
+}
+
+.user-icon-circle:hover i {
+    color: #000;
+}
+
+/* Activity indicator (dot hijau) */
+.user-icon-wrapper .activity {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    z-index: 1;
+}
+
+.user-icon-wrapper .activity.active {
+    background-color: #28a745;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .nav-control {
+        margin-left: 15px;
+    }
+    
+    .user-icon-wrapper {
+        margin-right: 15px;
+    }
+}
+</style>
+
+<script>
+function confirmLogout(event) {
+    event.preventDefault(); // Mencegah link default
+    if (confirm("Apakah Anda yakin ingin logout?")) {
+        window.location.href = "../logout.php";
+    }
+}
+</script>

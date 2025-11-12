@@ -1,14 +1,11 @@
 <?php
 session_start();
 require "config/koneksi.php";
-// $host="localhost"; $user="root"; $pass=""; $db="db_login";
-// $conn = new mysqli($host, $user, $pass, $db);
-// if ($conn->connect_error) die("Koneksi gagal: ".$conn->connect_error);
 
 $verifikasi_msg = "";
-$email = $_GET['email'] ?? '';  // ambil email dari URL
+$email = $_GET['email'] ?? '';
 $kode = "";
-$verified = false; // status berhasil verifikasi
+$verified = false;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $email = trim($_POST['email'] ?? '');
@@ -30,13 +27,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $update->execute();
                 $update->close();
 
-                $verifikasi_msg = "✅ Verifikasi berhasil! Silakan login.";
-                $verified = true; // tandai sudah diverifikasi
+                $verifikasi_msg = "success";
+                $verified = true;
             } else {
-                $verifikasi_msg = "❌ Kode verifikasi salah.";
+                $verifikasi_msg = "error_code";
             }
         } else {
-            $verifikasi_msg = "Email tidak ditemukan atau sudah terverifikasi.";
+            $verifikasi_msg = "error_email";
         }
         $stmt->close();
     }
@@ -51,6 +48,8 @@ $koneksi->close();
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Verifikasi Akun</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- SweetAlert2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 <body class="bg-light">
 
@@ -60,11 +59,7 @@ $koneksi->close();
       <div class="card shadow p-4" style="border-radius:1rem;">
         <h3 class="text-center mb-4">Verifikasi Akun</h3>
 
-        <?php if ($verifikasi_msg): ?>
-          <div class="alert alert-info py-2"><?= htmlspecialchars($verifikasi_msg) ?></div>
-        <?php endif; ?>
-
-        <form action="" method="POST">
+        <form action="" method="POST" id="verificationForm">
           <div class="mb-3">
             <label class="form-label">Email</label>
             <input type="email" class="form-control" name="email" required 
@@ -78,9 +73,8 @@ $koneksi->close();
         </form>
 
         <div class="text-center mt-3">
-          <!-- Tombol login disabled sebelum verifikasi -->
-          <a href="login.php" class="btn btn-success w-100 mt-2 <?= $verified ? '' : 'disabled' ?>">
-            Login
+          <a href="login.php" class="btn btn-success w-100 mt-2">
+            Kembali ke Login
           </a>
         </div>
 
@@ -89,6 +83,52 @@ $koneksi->close();
   </div>
 </div>
 
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  <?php if ($verified && $verifikasi_msg === 'success'): ?>
+    // Tampilkan SweetAlert2 saat verifikasi berhasil
+    Swal.fire({
+      title: "Verifikasi Berhasil!",
+      text: "Akun Anda telah berhasil diverifikasi",
+      icon: "success",
+      draggable: true,
+      showConfirmButton: false,
+      timer: 2000
+    });
+    
+    // Redirect ke login.php setelah 2 detik
+    setTimeout(() => {
+      window.location.href = 'login.php';
+    }, 2000);
+  <?php elseif ($verifikasi_msg === 'error_code'): ?>
+    // Tampilkan SweetAlert2 saat kode verifikasi salah
+    Swal.fire({
+      title: "Kode Salah!",
+      text: "Kode verifikasi yang Anda masukkan tidak sesuai",
+      icon: "error",
+      draggable: true
+    });
+  <?php elseif ($verifikasi_msg === 'error_email'): ?>
+    // Tampilkan SweetAlert2 saat email tidak ditemukan
+    Swal.fire({
+      title: "Email Tidak Ditemukan!",
+      text: "Email tidak terdaftar atau sudah terverifikasi",
+      icon: "error",
+      draggable: true
+    });
+  <?php elseif ($verifikasi_msg && $verifikasi_msg !== ''): ?>
+    // Error lainnya
+    Swal.fire({
+      title: "Gagal!",
+      text: "<?= htmlspecialchars($verifikasi_msg) ?>",
+      icon: "error",
+      draggable: true
+    });
+  <?php endif; ?>
+</script>
+
 </body>
 </html>

@@ -7612,7 +7612,7 @@ sub {
 .nav-control {
   cursor: pointer;
   position: absolute;
-  left: 1.4375rem;
+  left: 0.9375rem;
   text-align: center;
   top: 46%;
   transform: translateY(-50%); }

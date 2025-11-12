@@ -136,16 +136,77 @@ $result_ulasan = $conn->query($query_ulasan);
     <!-- Panduan Booking -->
     <section id="services" class="py-5">
       <div class="container-fluid px-3 px-md-5">
-        <div class="card shadow-lg rounded-4">
-          <div class="card-body">
-            <h1 class="text-center mt-3 mb-1">Panduan Booking</h1>
-            <p class="text-secondary mb-0">Langkah-langkah mudah untuk memesan studio latihan musik kami:</p>
-            <ol class="mt-3">
-              <li>Pilih studio sesuai kebutuhan Anda di bagian <strong>Studio & Jadwal</strong>.</li>
-              <li>Lihat ketersediaan waktu, lalu klik <strong>Booking</strong>.</li>
-              <li>Isi data dan konfirmasi jadwal.</li>
-              <li>Datang sesuai jam yang telah dipesan dan nikmati fasilitas kami 🎶</li>
-            </ol>
+        <div class="card shadow-lg rounded-4 overflow-hidden">
+          <!-- Header dengan Gambar -->
+          <div class="position-relative" style="height: 250px; overflow: hidden;">
+            <img src="assets/image/studio.jpg" alt="Studio Musik" class="w-100 h-100" style="object-fit: cover;">
+            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 100%);">
+              <div class="text-center text-white px-3">
+                <h1 class="display-4 fw-bold mb-2">Panduan Booking</h1>
+                <p class="lead mb-0">Langkah-langkah mudah untuk memesan studio latihan musik kami</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Content dengan Langkah-langkah -->
+          <div class="card-body p-4 p-md-5">
+            <div class="row g-4 mt-2">
+              <!-- Langkah 1 -->
+              <div class="col-md-6 col-lg-3">
+                <div class="step-card h-100 p-4 rounded-4 border border-2 text-center position-relative">
+                  <div class="step-number position-absolute top-0 start-50 translate-middle">
+                    1
+                  </div>
+                  <div class="mt-4 pt-3">
+                    <i class="bi bi-music-note-beamed display-4 text-warning mb-3"></i>
+                    <h5 class="fw-bold mb-2">Pilih Studio</h5>
+                    <p class="text-muted small mb-0">Pilih studio sesuai kebutuhan Anda di bagian <strong>Studio & Jadwal</strong></p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Langkah 2 -->
+              <div class="col-md-6 col-lg-3">
+                <div class="step-card h-100 p-4 rounded-4 border border-2 text-center position-relative">
+                  <div class="step-number position-absolute top-0 start-50 translate-middle">
+                    2
+                  </div>
+                  <div class="mt-4 pt-3">
+                    <i class="bi bi-calendar-check display-4 text-warning mb-3"></i>
+                    <h5 class="fw-bold mb-2">Cek Jadwal</h5>
+                    <p class="text-muted small mb-0">Lihat ketersediaan waktu, lalu klik <strong>Booking</strong></p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Langkah 3 -->
+              <div class="col-md-6 col-lg-3">
+                <div class="step-card h-100 p-4 rounded-4 border border-2 text-center position-relative">
+                  <div class="step-number position-absolute top-0 start-50 translate-middle">
+                    3
+                  </div>
+                  <div class="mt-4 pt-3">
+                    <i class="bi bi-clipboard-check display-4 text-warning mb-3"></i>
+                    <h5 class="fw-bold mb-2">Isi Data</h5>
+                    <p class="text-muted small mb-0">Isi data dan konfirmasi jadwal booking Anda</p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Langkah 4 -->
+              <div class="col-md-6 col-lg-3">
+                <div class="step-card h-100 p-4 rounded-4 border border-2 text-center position-relative">
+                  <div class="step-number position-absolute top-0 start-50 translate-middle">
+                    4
+                  </div>
+                  <div class="mt-4 pt-3">
+                    <i class="bi bi-emoji-smile display-4 text-warning mb-3"></i>
+                    <h5 class="fw-bold mb-2">Nikmati!</h5>
+                    <p class="text-muted small mb-0">Datang sesuai jam yang telah dipesan dan nikmati fasilitas kami 🎶</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -373,5 +434,39 @@ $result_ulasan = $conn->query($query_ulasan);
     // Auto year
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
+
+  <style>
+    /* Step Card Styles */
+    .step-card {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .step-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    }
+
+    .step-number {
+      background: #ffd700;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #000;
+      box-shadow: 0 4px 10px rgba(255,215,0,0.3);
+      transition: all 0.3s ease;
+    }
+
+    .step-card:hover .step-number {
+      transform: scale(1.1);
+      box-shadow: 0 6px 15px rgba(255,215,0,0.5);
+    }
+  </style>
 </body>
 </html>
