@@ -20,10 +20,11 @@ while ($row = mysqli_fetch_assoc($r1)) {
     $reservasi[(int)$row['bulan']] = (int)$row['total_reservasi'];
 }
 
-// Ambil data transaksi (pendapatan)
-$q2 = "SELECT MONTH(tanggal) AS bulan, SUM(total_harga) AS total_pendapatan
-       FROM transaksi
-       GROUP BY MONTH(tanggal)";
+// Ambil data pendapatan dari tabel booking (total_tagihan)
+$q2 = "SELECT MONTH(Tanggal) AS bulan, SUM(total_tagihan) AS total_pendapatan
+       FROM booking
+       WHERE status != 'dibatalkan'
+       GROUP BY MONTH(Tanggal)";
 $r2 = mysqli_query($koneksi, $q2);
 
 $pendapatan = array_fill(1, 12, 0);

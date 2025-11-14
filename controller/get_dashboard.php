@@ -3,8 +3,8 @@ require_once "../config/koneksi.php";
 
 // Total pendapatan per bulan
 $queryPendapatan = mysqli_query($koneksi, "
-    SELECT COALESCE(SUM(total_harga), 0) AS total 
-    FROM transaksi 
+    SELECT COALESCE(SUM(total_tagihan), 0) AS total 
+    FROM booking 
     WHERE MONTH(tanggal) = MONTH(CURDATE()) 
       AND YEAR(tanggal) = YEAR(CURDATE())
 ");
