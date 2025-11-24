@@ -24,6 +24,35 @@ if ($studio === 'bronze') {
 } elseif ($studio === 'gold') {
     $id_studio = 'ST002';
 }
+
+// 🔥 AMBIL JAM YANG SUDAH DIBOOKING UNTUK TANGGAL TERTENTU
+$bookedSlots = [];
+if (isset($_GET['check_date']) && !empty($_GET['check_date'])) {
+    $check_date = $_GET['check_date'];
+    
+    // Query untuk mengambil semua jam yang sudah dibooking (termasuk yang belum expired)
+    $query = $koneksi->prepare("
+        SELECT jam_booking, paket, expired_at 
+        FROM booking 
+        WHERE id_studio = ? 
+        AND Tanggal = ? 
+        AND status NOT IN ('dibatalkan', 'selesai')
+        AND (expired_at IS NULL OR expired_at > NOW())
+    ");
+    $query->bind_param("ss", $id_studio, $check_date);
+    $query->execute();
+    $result = $query->get_result();
+    
+   while ($row = $result->fetch_assoc()) {
+    // Hilangkan spasi agar format sama dengan front-end: 14.00-15.00
+    $jamNormalized = str_replace([' ', ' - '], ['','-'], $row['jam_booking']);
+    
+    $bookedSlots[] = [
+        'jam' => $jamNormalized,
+        'paket' => $row['paket']
+    ];
+}
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -41,11 +70,32 @@ if ($studio === 'bronze') {
   border-radius: 8px;
   cursor: pointer;
   user-select: none;
+  transition: all 0.3s;
 }
 .time-slot.active {
   background-color: #007bff;
   color: white;
   border-color: #007bff;
+}
+/* 🔥 STYLE UNTUK JAM YANG SUDAH DIBOOKING */
+.time-slot.booked {
+  background-color: #e0e0e0;
+  color: #888;
+  border-color: #999;
+  cursor: not-allowed;
+  position: relative;
+}
+.time-slot.booked::after {
+  content: "DIBOOKING";
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #dc3545;
+  color: white;
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-weight: bold;
 }
 .card.bronze {
   background-color: #b46b2b;
@@ -72,17 +122,29 @@ if ($studio === 'bronze') {
 </style>
 
 <script>
+// 🔥 DATA JAM YANG SUDAH DIBOOKING DARI PHP
+const bookedSlots = <?= json_encode($bookedSlots) ?>;
+
+function isSlotBooked(jamStart, jamEnd) {
+ const jamBooking = (jamStart + '-' + jamEnd).replace(/\s/g, '');
+return bookedSlots.some(slot => slot.jam === jamBooking);
+}
+
 function getDurasiPaket() {
   const paket = document.querySelector("input[name='paket']:checked");
   if (!paket) return 0;
   const val = paket.value;
-  // Cek jika paket 2 jam atau 3 jam
   if (val.includes('2 jam') || val.includes('2jam')) return 2;
   if (val.includes('3 jam') || val.includes('3jam')) return 3;
   return 1;
 }
 
 function toggleSlot(el) {
+  // 🔥 CEK APAKAH SLOT SUDAH DIBOOKING
+  if (el.classList.contains('booked')) {
+    return; // Tidak bisa diklik
+  }
+
   const durasi = getDurasiPaket();
   const slots = Array.from(document.querySelectorAll('.time-slot'));
   
@@ -91,6 +153,21 @@ function toggleSlot(el) {
   } else {
     slots.forEach(s => s.classList.remove('active'));
     const index = slots.indexOf(el);
+    
+    // 🔥 CEK APAKAH SLOT BERIKUTNYA ADA YANG SUDAH DIBOOKING
+    let canBook = true;
+    for (let i = index; i < index + durasi && i < slots.length; i++) {
+      if (slots[i].classList.contains('booked')) {
+        canBook = false;
+        break;
+      }
+    }
+    
+    if (!canBook) {
+      alert('❌ Tidak bisa memilih slot ini karena ada jam yang sudah dibooking!');
+      return;
+    }
+    
     for (let i = index; i < index + durasi && i < slots.length; i++) {
       slots[i].classList.add('active');
     }
@@ -139,10 +216,32 @@ function updateBooking() {
   document.getElementById("total_tagihan").value = total;
 }
 
+// 🔥 RELOAD JAM SAAT TANGGAL BERUBAH
+function reloadSlots() {
+  const tanggal = document.querySelector("input[name='tanggal']").value;
+  if (tanggal) {
+    const studio = new URLSearchParams(window.location.search).get('studio');
+    window.location.href = `?studio=${studio}&check_date=${tanggal}`;
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  // 🔥 TANDAI SLOT YANG SUDAH DIBOOKING
+  document.querySelectorAll(".time-slot").forEach(slot => {
+    const jamStart = slot.dataset.start;
+    const jamEnd = slot.dataset.end;
+    if (isSlotBooked(jamStart, jamEnd)) {
+      slot.classList.add('booked');
+    }
+  });
+
   document.querySelectorAll("input[name='paket']").forEach(p => {
     p.addEventListener("change", () => {
-      document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("active"));
+      document.querySelectorAll(".time-slot").forEach(s => {
+        if (!s.classList.contains('booked')) {
+          s.classList.remove("active");
+        }
+      });
       document.getElementById("durasi").value = "";
       document.getElementById("jam_mulai").value = "";
       document.getElementById("jam_selesai").value = "";
@@ -163,7 +262,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <p class="mb-3">Pilih jadwal dan lengkapi detail Anda.</p>
 
       <form method="post" action="proses_booking.php" onsubmit="updateBooking()">
-        <!-- ✅ TAMBAHKAN id_user -->
         <input type="hidden" name="id_user" value="<?= htmlspecialchars($userId) ?>">
         <input type="hidden" name="id_studio" id="id_studio" value="<?= htmlspecialchars($id_studio) ?>">
         <input type="hidden" name="studio_nama" id="studio_nama" value="<?= htmlspecialchars($studio) ?>">
@@ -177,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <input type="hidden" name="nama" value="<?= htmlspecialchars($namaLengkap) ?>">
         </div>
 
-        <!-- 🔥 PERBAIKAN: UBAH VALUE PAKET AGAR SESUAI DENGAN DATABASE -->
+        <!-- Paket -->
         <div class="mb-3">
           <label class="form-label">Paket</label><br>
           <?php if ($studio == "bronze"): ?>
@@ -193,12 +291,15 @@ document.addEventListener("DOMContentLoaded", () => {
         <!-- Tanggal -->
         <div class="mb-3">
           <label class="form-label">Tanggal</label>
-          <input type="date" name="tanggal" class="form-control" required>
+          <input type="date" name="tanggal" class="form-control" 
+                 value="<?= isset($_GET['check_date']) ? htmlspecialchars($_GET['check_date']) : '' ?>"
+                 onchange="reloadSlots()" required>
         </div>
 
         <!-- Jam -->
         <div class="mb-3">
           <label class="form-label">Pilih Jam</label><br>
+          <small class="text-muted">Slot abu-abu sudah dibooking oleh user lain</small><br>
           <div id="time-slots">
             <?php
               $slots = [
@@ -207,7 +308,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 ["18.00","19.00"],["19.00","20.00"],["20.00","21.00"],["21.00","22.00"]
               ];
               foreach ($slots as $s) {
-                echo "<div class='time-slot' data-start='{$s[0]}' data-end='{$s[1]}' onclick='toggleSlot(this)'>{$s[0]} - {$s[1]}</div>";
+                echo "<div class='time-slot' 
+        data-start='{$s[0]}' 
+        data-end='{$s[1]}' 
+        data-jam='" . str_replace(' ', '', $s[0] . '-' . $s[1]) . "'
+        onclick='toggleSlot(this)'>
+      {$s[0]} - {$s[1]}
+      </div>";
               }
             ?>
           </div>

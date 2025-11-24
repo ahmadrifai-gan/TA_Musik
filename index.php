@@ -5,6 +5,11 @@ require_once 'koneksi.php'; // Pastikan file koneksi database ada
 // Ambil ulasan yang sudah diapprove
 $query_ulasan = "SELECT nama, email, pesan FROM ulasan WHERE status = 'approved' ORDER BY tanggal_submit DESC LIMIT 10";
 $result_ulasan = $conn->query($query_ulasan);
+
+// Cek jika query gagal
+if (!$result_ulasan) {
+    die("Error query ulasan: " . $conn->error);
+}
 ?>
 
 <!DOCTYPE html>
@@ -348,7 +353,7 @@ $result_ulasan = $conn->query($query_ulasan);
         <div class="alert alert-success alert-dismissible fade show" role="alert">
           <i class="bi bi-check-circle-fill me-2"></i>
           <?php 
-          echo $_SESSION['success']; 
+          echo htmlspecialchars($_SESSION['success']); 
           unset($_SESSION['success']);
           ?>
           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -359,7 +364,7 @@ $result_ulasan = $conn->query($query_ulasan);
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
           <i class="bi bi-exclamation-triangle-fill me-2"></i>
           <?php 
-          echo $_SESSION['error']; 
+          echo htmlspecialchars($_SESSION['error']); 
           unset($_SESSION['error']);
           ?>
           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
