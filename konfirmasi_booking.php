@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $id_user = $_SESSION['user_id'];
 
-// 🔥 PERBAIKAN: Ambil data booking terbaru dari database (bukan dari session)
+// 🔥 Ambil data booking terbaru dari database
 $query = $koneksi->prepare("
     SELECT 
         b.*,
@@ -41,9 +41,25 @@ if (!$booking) {
     exit;
 }
 
-// 🔥 Proses konfirmasi - HAPUS SESSION DAN REDIRECT
+// 🔥 CEK APAKAH BOOKING SUDAH EXPIRED
+if ($booking['status_pembayaran'] === 'belum_dibayar' && 
+    !empty($booking['expired_at']) && 
+    strtotime($booking['expired_at']) < time()) {
+    
+    // Update status menjadi dibatalkan
+    $update = $koneksi->prepare("UPDATE booking SET status = 'dibatalkan' WHERE id_order = ?");
+    $update->bind_param("i", $booking['id_order']);
+    $update->execute();
+    
+    echo "<script>
+        alert('⏰ Booking Anda telah EXPIRED!\\n\\nBooking telah dibatalkan karena tidak ada pembayaran DP dalam 2 jam.\\n\\nSilakan booking ulang.');
+        window.location.href='index.php';
+    </script>";
+    exit;
+}
+
+// 🔥 Proses konfirmasi
 if (isset($_POST['konfirmasi'])) {
-    // Hapus session booking_data setelah konfirmasi
     unset($_SESSION['booking_data']);
     
     echo "<script>
@@ -129,12 +145,47 @@ if (isset($_POST['konfirmasi'])) {
             border-radius: 8px;
             margin-bottom: 20px;
         }
+        
+        /* 🔥 STYLE TIMER */
+        .timer-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
+        }
+        .timer-display {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .timer-warning {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container my-5">
     <h3 class="header mb-4"><i class="bi bi-check-circle"></i> Konfirmasi Booking</h3>
+    
+    <!-- 🔥 TIMER COUNTDOWN (HANYA JIKA BELUM BAYAR DP) -->
+    <?php if ($booking['status_pembayaran'] === 'belum_dibayar' && !empty($booking['expired_at'])): ?>
+    <div class="timer-box timer-warning" id="timerBox">
+        <h5><i class="bi bi-alarm"></i> Booking Akan Expire Dalam:</h5>
+        <div class="timer-display" id="countdown">
+            <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>
+        </div>
+        <small>Segera upload DP untuk mengamankan booking Anda!</small>
+    </div>
+    <?php endif; ?>
     
     <div class="info-alert">
         <i class="bi bi-info-circle-fill text-primary"></i>
@@ -167,7 +218,6 @@ if (isset($_POST['konfirmasi'])) {
                         $classPaket = 'paket-badge';
                         $paketText = htmlspecialchars($paket);
                         
-                        // Studio Bronze
                         if (stripos($namaStudio, 'bronze') !== false) {
                             if (stripos($paket, 'tanpa') !== false || stripos($paket, '35') !== false) {
                                 $classPaket .= ' paket-bronze-tanpa';
@@ -177,7 +227,6 @@ if (isset($_POST['konfirmasi'])) {
                                 $paketText = 'Dengan Keyboard (40K/jam)';
                             }
                         }
-                        // Studio Gold
                         elseif (stripos($namaStudio, 'gold') !== false) {
                             if (stripos($paket, 'reguler') !== false || stripos($paket, '50') !== false) {
                                 $classPaket .= ' paket-gold-reguler';
@@ -225,7 +274,7 @@ if (isset($_POST['konfirmasi'])) {
             </tr>
         </table>
 
-        <!-- 🔥 TAMPILKAN BUKTI DP JIKA ADA -->
+        <!-- TAMPILKAN BUKTI DP JIKA ADA -->
         <?php if (!empty($booking['bukti_dp'])): ?>
         <div class="mt-3 p-3 bg-light rounded">
             <h6 class="mb-2"><i class="bi bi-image"></i> Bukti Pembayaran DP</h6>
@@ -267,6 +316,48 @@ if (isset($_POST['konfirmasi'])) {
         </form>
     </div>
 </div>
+
+<!-- 🔥 JAVASCRIPT TIMER COUNTDOWN - FIXED -->
+<?php if ($booking['status_pembayaran'] === 'belum_dibayar' && !empty($booking['expired_at'])): ?>
+<script>
+// 🔥 PERBAIKAN: Hitung waktu server saat ini dan expired_at dalam milliseconds
+const serverNow = <?= time() * 1000 ?>; // Waktu server sekarang dalam ms
+const expiredAt = <?= strtotime($booking['expired_at']) * 1000 ?>; // Waktu expired dalam ms
+const idOrder = <?= $booking['id_order'] ?>;
+
+// Hitung selisih waktu antara browser dan server
+const timeDiff = Date.now() - serverNow;
+
+const countdown = setInterval(() => {
+    const now = Date.now() - timeDiff; // Sinkronisasi dengan waktu server
+    const distance = expiredAt - now;
+    
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    
+    // Update tampilan timer
+    if (hours >= 0 && minutes >= 0 && seconds >= 0) {
+        document.getElementById("hours").innerText = String(hours).padStart(2, '0');
+        document.getElementById("minutes").innerText = String(minutes).padStart(2, '0');
+        document.getElementById("seconds").innerText = String(seconds).padStart(2, '0');
+    }
+    
+    // 🔥 JIKA WAKTU HABIS, BATALKAN BOOKING
+    if (distance < 0) {
+        clearInterval(countdown);
+        alert('⏰ WAKTU HABIS!\\n\\nBooking Anda telah dibatalkan karena tidak ada pembayaran DP dalam 2 jam.\\n\\nSlot booking telah dibuka kembali untuk user lain.');
+        window.location.href = 'index.php';
+    }
+    
+    // 🔥 WARNING KETIKA WAKTU < 10 MENIT
+    if (distance < 600000 && distance > 599000) {
+        document.getElementById("timerBox").style.background = "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)";
+        alert('⚠️ PERINGATAN!\\n\\nBooking akan expired dalam 10 menit!\\nSegera upload DP untuk mengamankan booking Anda.');
+    }
+}, 1000);
+</script>
+<?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

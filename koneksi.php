@@ -1,21 +1,31 @@
 <?php
-// File: koneksi.php
-// Letakkan file ini di folder yang sama dengan index.php
+// File: config/koneksi.php
+// 🔥 Set timezone Indonesia (WIB)
+date_default_timezone_set('Asia/Jakarta');
 
-$server = 'localhost';         // Host database
-$username = 'root';            // Username database (default XAMPP: root)
-$password = '';                // Password database (default XAMPP: kosong)
-$db = 'ms_studio';             // Nama database Anda
+// Konfigurasi database
+$server = 'localhost';
+$username = 'root';
+$password = '';
+$db = 'ms_studio';
 
-// Membuat koneksi
-$koneksi = mysqli_connect(hostname: $server, username: $username, password: $password, database: $db);
-$conn = new mysqli($server, $username, $password, $db);
+// ✅ KONEKSI UTAMA MENGGUNAKAN OOP (untuk semua file)
+$koneksi = new mysqli($server, $username, $password, $db);
 
 // Cek koneksi
-if ($conn->connect_error) {
-    die("Koneksi database gagal: " . $conn->connect_error);
+if ($koneksi->connect_error) {
+    die("Koneksi database gagal: " . $koneksi->connect_error);
 }
 
+// Set timezone untuk MySQL
+$koneksi->query("SET time_zone = '+07:00'");
+
 // Set charset untuk mencegah masalah encoding
-$conn->set_charset("utf8mb4");
+$koneksi->set_charset("utf8mb4");
+
+// ✅ ALIAS VARIABEL $conn untuk kompatibilitas dengan index.php
+$conn = $koneksi;
+
+// Optional: Tampilkan pesan sukses (hapus di production)
+// echo "Koneksi database berhasil!";
 ?>
