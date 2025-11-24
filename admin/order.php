@@ -112,9 +112,7 @@ if (isset($_POST['update'])) {
 
 
 <style>
-  * {
-    font-family: 'Poppins', sans-serif;
-  }
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
 
   .content-body {
     background-color: #f5f7fa;
@@ -130,11 +128,11 @@ if (isset($_POST['update'])) {
   }
 
   .page-header h4 {
-    font-size: 24px;
-    font-weight: 600;
-    color: #2c3e50;
-    margin: 0;
-  }
+    font-size: 28px;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 20px;
+}
 
   .btn-add {
     background-color: #28a745;
@@ -396,12 +394,11 @@ if (isset($_POST['update'])) {
   <div class="container-fluid">
 
     <div class="page-header">
-      <h4>Manajemen Order</h4>
-      <button class="btn btn-add" data-toggle="modal" data-target="#modalTambah">
+    <h4>Manajemen Order</h4>
+    <a href="tambah_booking.php" class="btn btn-add">
         <i class="fa fa-plus"></i> Tambah Order
-      </button>
-    </div>
-
+    </a>
+</div>
     <div class="card">
       <div class="table-wrapper">
         <div class="table-responsive">
@@ -614,7 +611,9 @@ if (isset($_POST['update'])) {
       <form method="POST">
         <div class="modal-header">
           <h5 class="modal-title">Tambah Order</h5>
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -678,7 +677,9 @@ if (isset($_POST['update'])) {
       <form method="POST">
         <div class="modal-header">
           <h5 class="modal-title">Edit Order</h5>
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
         <div class="modal-body">
           <input type="hidden" name="edit_id" id="edit_id">
@@ -742,7 +743,9 @@ if (isset($_POST['update'])) {
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Detail Order</h5>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body">
         <p><strong>Nama Pelanggan:</strong> <span id="detailNama"></span></p>
@@ -752,6 +755,9 @@ if (isset($_POST['update'])) {
         <p><strong>Total Tagihan:</strong> Rp <span id="detailTotal"></span></p>
         <p><strong>Status:</strong> <span id="detailStatus"></span></p>
         <p><strong>Status Pembayaran:</strong> <span id="detailPembayaran"></span></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
       </div>
     </div>
   </div>
@@ -763,7 +769,9 @@ if (isset($_POST['update'])) {
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
         <h5 class="modal-title">Konfirmasi Hapus</h5>
-        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body">
         <p>Apakah kamu yakin ingin menghapus order ini?</p>
@@ -803,7 +811,7 @@ $(document).ready(function(){
 
     $('#modalDetail').modal('show');
   });
-
+ 
   // Edit - YANG SUDAH DIPERBAIKI
   $(document).on('click', '.editBtn', function(){
     var id = $(this).data('id');
@@ -848,7 +856,13 @@ $(document).ready(function(){
     $('#hapus_id').val($(this).data('id'));
     $('#modalHapus').modal('show');
   });
+
+  // PERBAIKAN: Event handler untuk memastikan tombol close berfungsi
+  $(document).on('click', '.close, [data-dismiss="modal"]', function(e) {
+    e.preventDefault();
+    $(this).closest('.modal').modal('hide');
+  });
 });
 </script>
 
-<?php require "../master/footer.php"; ?>
+<?php require "../master/footer.php";?>

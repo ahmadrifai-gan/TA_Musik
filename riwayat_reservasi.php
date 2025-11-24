@@ -123,7 +123,8 @@ if (!empty($filterTanggalAwal) && !empty($filterTanggalAkhir)) {
     $types .= "s";
 }
 
-$query .= " ORDER BY Tanggal DESC LIMIT ?";
+// PERUBAHAN: Urutan berdasarkan id_order DESC (booking terbaru)
+$query .= " ORDER BY id_order DESC LIMIT ?";
 $params[] = (int)$showEntries;
 $types .= "i";
 

@@ -11,7 +11,6 @@ if (!isset($_SESSION['booking_data'])) {
 $booking = $_SESSION['booking_data'];
 $error = '';
 $success = '';
-$showModal = false; // penanda untuk memicu modal pop-up
 
 // Validasi id_order
 if (!isset($booking['id_order']) || empty($booking['id_order'])) {
@@ -43,12 +42,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $dest_path = $uploadFileDir . $newFileName;
 
                 if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                    // 🔥 UPDATE: Simpan bukti DP tapi status tetap 'menunggu'
                     $stmt = $koneksi->prepare("UPDATE booking SET bukti_dp = ?, status_pembayaran = 'dp_dibayar', status = 'menunggu' WHERE id_order = ?");
                     $stmt->bind_param("si", $newFileName, $id_order);
                     if ($stmt->execute()) {
-                        $success = "✅ Bukti DP berhasil diupload! Tunggu konfirmasi admin.";
-                        unset($_SESSION['booking_data']);
-                        $showModal = true; // aktifkan modal konfirmasi
+                        // ✅ REDIRECT KE KONFIRMASI BOOKING (tidak hapus session dulu)
+                        header("Location: konfirmasi_booking.php");
+                        exit;
                     } else {
                         $error = "Terjadi kesalahan saat menyimpan ke database.";
                     }
@@ -144,44 +144,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="alert alert-danger"><?php echo $error; ?></div>
     <?php endif; ?>
 
-    <?php if (!$success): ?>
     <form method="post" enctype="multipart/form-data">
       <div class="mb-3">
         <label for="bukti_dp" class="form-label">Pilih File Bukti DP</label>
         <input type="file" name="bukti_dp" id="bukti_dp" class="form-control" required>
         <small class="text-muted">Format: JPG, JPEG, PNG, atau PDF (maks. 5MB)</small>
       </div>
-      <button type="submit" class="btn btn-upload w-100">Upload Sekarang</button>
+      <button type="submit" class="btn btn-upload w-100">Upload & Lanjutkan ke Konfirmasi</button>
     </form>
-    <?php endif; ?>
 
     <a href="ketentuan.php" class="back-link">← Kembali ke Halaman Sebelumnya</a>
   </div>
-
-  <!-- Modal Konfirmasi -->
-  <div class="modal fade" id="modalKonfirmasi" tabindex="-1" aria-labelledby="modalKonfirmasiLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header bg-warning">
-          <h5 class="modal-title fw-bold" id="modalKonfirmasiLabel">Konfirmasi Reservasi</h5>
-        </div>
-        <div class="modal-body text-center">
-          <p class="mb-3">Bukti DP kamu telah berhasil diupload!<br>Apakah ingin melanjutkan ke halaman riwayat reservasi?</p>
-        </div>
-        <div class="modal-footer justify-content-center">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-          <a href="riwayat_reservasi.php" class="btn btn-warning text-dark fw-semibold">Lanjutkan</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <?php if ($showModal): ?>
-  <script>
-    var modal = new bootstrap.Modal(document.getElementById('modalKonfirmasi'));
-    window.addEventListener('load', () => modal.show());
-  </script>
-  <?php endif; ?>
 
 </body>
 </html>
