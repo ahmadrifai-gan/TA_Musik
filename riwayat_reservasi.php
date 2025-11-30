@@ -437,26 +437,45 @@ $result = $stmt->get_result();
                                     }
                                     ?>
                                 </td>
-                                <td>
-                                    <?php
-                                     if ($row['status_pembayaran'] === 'belum_dibayar') {
-                                        echo "<span class='badge badge-danger p-2'>DP Belum Dibayar</span>";
-                                     } elseif ($row['status_pembayaran'] === 'dp_dibayar') {
-                                        echo "<span class='badge badge-success p-2'>DP Terbayar</span>";
-                                     } elseif ($row['status_pembayaran'] === 'lunas') {
-                                        echo "<span class='badge badge-success p-2'>Lunas</span>";
-                                     } else {
-                                        echo "<span class='badge badge-secondary p-2'>Tidak Diketahui</span>";
-                                     }
-                                    ?>
-                                </td>
-                                <td>
-                                    <?php if (!empty($row['bukti_dp'])): ?>
-                                        <a href="uploads/bukti_dp/<?= urlencode($row['bukti_dp']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">Lihat</a>
-                                    <?php else: ?>
-                                        <span class="text-muted">Belum upload</span>
-                                    <?php endif; ?>
-                                </td>
+                                <!-- KOLOM STATUS PEMBAYARAN -->
+                <td>
+                    <?php
+                     if ($row['status_pembayaran'] === 'belum_dibayar') {
+                        echo "<span class='badge badge-danger p-2'>DP Belum Dibayar</span>";
+                     } elseif ($row['status_pembayaran'] === 'dp_dibayar') {
+                        echo "<span class='badge badge-success p-2'>DP Terbayar</span>";
+                     } elseif ($row['status_pembayaran'] === 'lunas') {
+                        echo "<span class='badge badge-success p-2'>Lunas</span>";
+                     } else {
+                        echo "<span class='badge badge-secondary p-2'>Tidak Diketahui</span>";
+                     }
+                    ?>
+                </td>
+                
+                <!-- KOLOM BUKTI DP -->
+                <td>
+                    <?php if ($row['status_pembayaran'] === 'belum_dibayar' && $row['status'] !== 'dibatalkan'): ?>
+                        <!-- Tampilkan teks "Belum upload" + button Upload DP -->
+                        <div>
+                            <span class="text-muted d-block mb-2">Belum upload</span>
+                            <a href="ketentuan.php?id_order=<?= $row['id_order'] ?>" class="btn btn-sm" style="background-color: #FFD700; color: #000; font-weight: 600; border: none;">
+                                <i class="bi bi-cloud-upload"></i> Upload DP
+                            </a>
+                        </div>
+                    <?php elseif (!empty($row['bukti_dp'])): ?>
+                        <!-- Jika sudah upload bukti DP, tampilkan button Lihat -->
+                        <a href="uploads/bukti_dp/<?= urlencode($row['bukti_dp']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-file-earmark-image"></i> Lihat
+                        </a>
+                    <?php elseif ($row['status'] === 'dibatalkan'): ?>
+                        <!-- Jika sudah dibatalkan -->
+                        <span class="text-muted">-</span>
+                    <?php else: ?>
+                        <!-- Status lainnya -->
+                        <span class="text-muted">Belum upload</span>
+                    <?php endif; ?>
+                </td>
+                                
                                 <td>
                                     <?php if ($row['status'] !== 'dibatalkan'): ?>
                                         <button class="btn btn-blue btn-sm mb-1" 

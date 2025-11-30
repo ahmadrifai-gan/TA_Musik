@@ -46,13 +46,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $koneksi->prepare("UPDATE booking SET bukti_dp = ?, status_pembayaran = 'dp_dibayar', status = 'menunggu' WHERE id_order = ?");
                     $stmt->bind_param("si", $newFileName, $id_order);
                     if ($stmt->execute()) {
-                        // ✅ REDIRECT KE KONFIRMASI BOOKING (tidak hapus session dulu)
-                        header("Location: konfirmasi_booking.php");
+                        $stmt->close();
+                        
+                        // ✅ CEK APAKAH DARI RIWAYAT ATAU BOOKING BARU
+                        $from_riwayat = isset($_SESSION['from_riwayat']) && $_SESSION['from_riwayat'] === true;
+                        
+                        // Hapus session setelah berhasil upload
+                        unset($_SESSION['booking_data']);
+                        unset($_SESSION['from_riwayat']);
+                        
+                        // Redirect sesuai asal halaman
+                        if ($from_riwayat) {
+                            echo "<script>
+                                alert('Bukti DP berhasil diupload! Menunggu konfirmasi admin.');
+                                window.location.href='riwayat_reservasi.php';
+                            </script>";
+                        } else {
+                            // Untuk booking baru, tetap ke konfirmasi
+                            header("Location: konfirmasi_booking.php");
+                        }
                         exit;
                     } else {
                         $error = "Terjadi kesalahan saat menyimpan ke database.";
                     }
-                    $stmt->close();
                 } else {
                     $error = "Gagal memindahkan file ke folder tujuan.";
                 }
@@ -73,6 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="UTF-8">
   <title>Upload Bukti DP - Reys Music Studio</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <style>
     body {
@@ -150,10 +167,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="file" name="bukti_dp" id="bukti_dp" class="form-control" required>
         <small class="text-muted">Format: JPG, JPEG, PNG, atau PDF (maks. 5MB)</small>
       </div>
-      <button type="submit" class="btn btn-upload w-100">Upload & Lanjutkan ke Konfirmasi</button>
+      <button type="submit" class="btn btn-upload w-100">
+        <i class="bi bi-check-circle"></i> Upload & Lanjutkan ke Konfirmasi
+      </button>
     </form>
 
-    <a href="ketentuan.php" class="back-link">← Kembali ke Halaman Sebelumnya</a>
+    <a href="ketentuan.php" class="back-link">
+      <i class="bi bi-arrow-left-circle"></i> Kembali ke Halaman Sebelumnya
+    </a>
   </div>
 
 </body>
