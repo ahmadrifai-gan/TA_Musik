@@ -15,54 +15,63 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
 
     if ($koneksi->connect_error) die("Koneksi gagal: " . $koneksi->connect_error);
 
-    // Query untuk export Excel dengan UNION (transaksi + archive)
-    $query = "
-        SELECT t.order_id, t.durasi, t.total_harga, t.tanggal,
-               u.nama_lengkap AS nama_pelanggan, s.nama AS nama_studio,
-               'transaksi' as source
-        FROM transaksi t
-        JOIN user u ON t.id_user = u.id_user
-        JOIN studio s ON t.id_studio = s.id_studio
-        WHERE DATE(t.tanggal) BETWEEN ? AND ?";
+   // Query EXPORT Excel (booking + archive)
+$query = "
+SELECT 
+    b.id_order AS order_id,
+    (
+        REPLACE(SUBSTRING_INDEX(b.jam_booking, '-', -1), '.00', '') -
+        REPLACE(SUBSTRING_INDEX(b.jam_booking, '-', 1), '.00', '')
+    ) AS durasi,
+    b.total_tagihan AS total_harga,
+    b.tanggal,
+    u.nama_lengkap AS nama_pelanggan,
+    s.nama AS nama_studio
+FROM booking b
+JOIN user u ON b.id_user = u.id_user
+JOIN studio s ON b.id_studio = s.id_studio
+WHERE b.status_pembayaran = 'lunas'
+AND DATE(b.tanggal) BETWEEN ? AND ?
+";
 
-    $params = [$tgl_awal, $tgl_akhir];
-    $types = "ss";
+$types = "ss";
+$params = [$tgl_awal, $tgl_akhir];
 
-    if (!empty($studio)) {
-        $query .= " AND s.nama = ?";
-        $types .= "s";
-        $params[] = $studio;
-    }
+if (!empty($studio)) {
+$query .= " AND s.nama = ?";
+$types .= "s";
+$params[] = $studio;
+}
 
-    // UNION dengan jadwal_archive
-    $query .= "
-        UNION ALL
-        
-        SELECT b.id_order as order_id, 
-               TIMESTAMPDIFF(HOUR, ja.jam_mulai, ja.jam_selesai) as durasi,
-               b.total_tagihan as total_harga,
-               ja.tanggal,
-               u.nama_lengkap AS nama_pelanggan,
-               s.nama AS nama_studio,
-               'archive' as source
-        FROM jadwal_archive ja
-        JOIN booking b ON ja.id_order = b.id_order
-        JOIN user u ON b.id_user = u.id_user
-        JOIN studio s ON ja.id_studio = s.id_studio
-        WHERE DATE(ja.tanggal) BETWEEN ? AND ?
-        AND ja.status = 'Dibooking'";
+// UNION ALL archive
+$query .= "
+UNION ALL
+SELECT 
+    b.id_order AS order_id,
+    TIMESTAMPDIFF(HOUR, ja.jam_mulai, ja.jam_selesai) AS durasi,
+    b.total_tagihan AS total_harga,
+    ja.tanggal,
+    u.nama_lengkap AS nama_pelanggan,
+    s.nama AS nama_studio
+FROM jadwal_archive ja
+JOIN booking b ON ja.id_order = b.id_order
+JOIN user u ON b.id_user = u.id_user
+JOIN studio s ON ja.id_studio = s.id_studio
+WHERE DATE(ja.tanggal) BETWEEN ? AND ?
+AND ja.status = 'Dibooking'
+";
 
-    $types .= "ss";
-    $params[] = $tgl_awal;
-    $params[] = $tgl_akhir;
+$types .= "ss";
+$params[] = $tgl_awal;
+$params[] = $tgl_akhir;
 
-    if (!empty($studio)) {
-        $query .= " AND s.nama = ?";
-        $types .= "s";
-        $params[] = $studio;
-    }
+if (!empty($studio)) {
+$query .= " AND s.nama = ?";
+$types .= "s";
+$params[] = $studio;
+}
 
-    $query .= " ORDER BY tanggal DESC";
+$query .= " ORDER BY tanggal DESC";
 
     $stmt = $koneksi->prepare($query);
     if (!$stmt) die("Error prepare: " . $koneksi->error);
@@ -135,11 +144,14 @@ $offset = ($page - 1) * $limit;
 // --- Query COUNT dengan UNION ---
 $count_query = "
     SELECT COUNT(*) as total FROM (
-        SELECT t.order_id FROM transaksi t
-        JOIN user u ON t.id_user = u.id_user
-        JOIN studio s ON t.id_studio = s.id_studio
-        WHERE DATE(t.tanggal) BETWEEN ? AND ?";
-
+      SELECT b.id_order 
+      FROM booking b
+      JOIN user u ON b.id_user = u.id_user
+      JOIN studio s ON b.id_studio = s.id_studio
+      WHERE b.status_pembayaran = 'lunas'
+      AND DATE(b.tanggal) BETWEEN ? AND ?
+      ";
+      
 $count_params = [$tgl_awal, $tgl_akhir];
 $count_types = "ss";
 
@@ -180,12 +192,18 @@ $total_pages = ($total_rows > 0) ? ceil($total_rows / $limit) : 1;
 
 // --- Query data tampilan dengan UNION ---
 $query = "
-    SELECT t.order_id, t.durasi, t.total_harga, t.tanggal,
-           u.nama_lengkap AS nama_pelanggan, s.nama AS nama_studio
-    FROM transaksi t
-    JOIN user u ON t.id_user = u.id_user
-    JOIN studio s ON t.id_studio = s.id_studio
-    WHERE DATE(t.tanggal) BETWEEN ? AND ?";
+SELECT b.id_order AS order_id,
+b.jam_booking AS durasi,
+b.total_tagihan AS total_harga,
+b.Tanggal AS tanggal,
+u.nama_lengkap AS nama_pelanggan,
+s.nama AS nama_studio
+FROM booking b
+JOIN user u ON b.id_user = u.id_user
+JOIN studio s ON b.id_studio = s.id_studio
+WHERE b.status_pembayaran = 'lunas'
+AND DATE(b.Tanggal) BETWEEN ? AND ?
+";
 
 $params = [$tgl_awal, $tgl_akhir];
 $types = "ss";
@@ -237,11 +255,13 @@ $result = $stmt->get_result();
 $query_sum = "
     SELECT COALESCE(SUM(total_harga), 0) as total_pendapatan, COUNT(*) as jumlah
     FROM (
-        SELECT t.total_harga FROM transaksi t
-        JOIN user u ON t.id_user = u.id_user
-        JOIN studio s ON t.id_studio = s.id_studio
-        WHERE DATE(t.tanggal) BETWEEN ? AND ?";
-
+      SELECT b.total_tagihan AS total_harga
+      FROM booking b
+      JOIN user u ON b.id_user = u.id_user
+      JOIN studio s ON b.id_studio = s.id_studio
+      WHERE b.status_pembayaran = 'lunas'
+      AND DATE(b.tanggal) BETWEEN ? AND ?      
+";
 $sum_params = [$tgl_awal, $tgl_akhir];
 $sum_types = "ss";
 
