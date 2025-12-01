@@ -43,6 +43,9 @@ if (substr_count($jam_selesai, ':') == 1) $jam_selesai .= ':00';
 $total_tagihan_numeric = preg_replace('/[^0-9]/', '', $total_tagihan);
 if ($total_tagihan_numeric === '') $total_tagihan_numeric = 0;
 
+// 🔥 SET EXPIRED TIME (2 JAM DARI SEKARANG)
+$expired_at = date('Y-m-d H:i:s', strtotime('+2 hours'));
+
 // Cek apakah tabel jadwal ada
 $jadwal_aktif = false;
 $id_jadwal = null;
@@ -53,6 +56,7 @@ if ($cek_tabel && $cek_tabel->num_rows > 0) {
 
 // =================================================================================
 // === VALIDASI UTAMA: CEK DUPLIKASI BERDASARKAN STUDIO, TANGGAL, JAM & PAKET ===
+// === 🔥 TAMBAHKAN FILTER EXPIRED_AT ===
 // =================================================================================
 $cekDuplikasi = $koneksi->prepare("
     SELECT id_order, paket 
@@ -62,6 +66,7 @@ $cekDuplikasi = $koneksi->prepare("
       AND jam_booking = ? 
       AND paket = ?
       AND status NOT IN ('dibatalkan', 'selesai')
+      AND (expired_at IS NULL OR expired_at > NOW())
     LIMIT 1
 ");
 $cekDuplikasi->bind_param("ssss", $id_studio, $tanggal, $jam_booking, $paket);
@@ -78,24 +83,23 @@ if ($hasilDuplikasi && $hasilDuplikasi->num_rows > 0) {
 
 // =================================================================================
 // === VALIDASI TAMBAHAN: CEK OVERLAP JAM UNTUK STUDIO DAN TANGGAL YANG SAMA ===
+// === 🔥 TAMBAHKAN FILTER EXPIRED_AT ===
 // =================================================================================
-// Parsing jam untuk cek overlap
 $jam_parts = explode('-', $jam_booking);
 $booking_start = isset($jam_parts[0]) ? trim($jam_parts[0]) : '';
 $booking_end = isset($jam_parts[1]) ? trim($jam_parts[1]) : '';
 
 if (!empty($booking_start) && !empty($booking_end)) {
-    // Format ke HH:MM untuk perbandingan
     $booking_start = str_replace('.', ':', $booking_start);
     $booking_end = str_replace('.', ':', $booking_end);
     
-    // Cek apakah ada booking yang overlap pada studio dan tanggal yang sama
     $cekOverlap = $koneksi->prepare("
         SELECT id_order, jam_booking, paket 
         FROM booking 
         WHERE id_studio = ? 
           AND Tanggal = ? 
           AND status NOT IN ('dibatalkan', 'selesai')
+          AND (expired_at IS NULL OR expired_at > NOW())
     ");
     $cekOverlap->bind_param("ss", $id_studio, $tanggal);
     $cekOverlap->execute();
@@ -107,7 +111,6 @@ if (!empty($booking_start) && !empty($booking_end)) {
             $existing_start = str_replace('.', ':', trim($existing_jam[0]));
             $existing_end = str_replace('.', ':', trim($existing_jam[1]));
             
-            // Cek overlap: (Start1 < End2) and (Start2 < End1)
             if (($booking_start < $existing_end) && ($existing_start < $booking_end)) {
                 echo "<script>
                     alert('❌ BOOKING GAGAL!\\n\\nJam yang Anda pilih bentrok dengan booking lain:\\n\\n🕐 Jam Existing: {$row['jam_booking']}\\n📦 Paket: {$row['paket']}\\n\\nSilakan pilih jam yang tidak overlap!');
@@ -137,7 +140,6 @@ if ($jadwal_aktif) {
     $hasilJadwal = $cekJadwal->get_result();
 
     while ($row = $hasilJadwal->fetch_assoc()) {
-        // Jika ada jadwal dengan paket yang sama, tolak booking
         if (!empty($row['paket']) && trim(strtolower($row['paket'])) === trim(strtolower($paket))) {
             echo "<script>
                 alert('❌ BOOKING GAGAL!\\n\\nJadwal dengan paket yang sama sudah ada!\\n\\nSilakan pilih jam atau paket yang berbeda.');
@@ -164,7 +166,6 @@ if ($jadwal_aktif) {
         $row = $res_jadwal->fetch_assoc();
         $id_jadwal = $row['id_jadwal'];
     } else {
-        // Insert jadwal baru jika belum ada
         $insert_jadwal = $koneksi->prepare("
             INSERT INTO jadwal (id_studio, Tanggal, jam_mulai, jam_selesai, jam_booking, status)
             VALUES (?, ?, ?, ?, ?, 'dibooking')
@@ -175,18 +176,17 @@ if ($jadwal_aktif) {
     }
 }
 
-// Default jika jadwal belum aktif
 if (empty($id_jadwal)) $id_jadwal = null;
 
 // =================================================================================
-// === SIMPAN DATA BOOKING ===
+// === SIMPAN DATA BOOKING DENGAN EXPIRED_AT ===
 // =================================================================================
 $stmt = $koneksi->prepare("
     INSERT INTO booking 
-    (id_user, id_studio, id_jadwal, total_tagihan, status, status_pembayaran, Tanggal, jam_booking, paket)
-    VALUES (?, ?, ?, ?, 'menunggu', 'belum_dibayar', ?, ?, ?)
+    (id_user, id_studio, id_jadwal, total_tagihan, status, status_pembayaran, Tanggal, jam_booking, paket, expired_at)
+    VALUES (?, ?, ?, ?, 'menunggu', 'belum_dibayar', ?, ?, ?, ?)
 ");
-$stmt->bind_param("isidsss", $id_user, $id_studio, $id_jadwal, $total_tagihan_numeric, $tanggal, $jam_booking, $paket);
+$stmt->bind_param("isidssss", $id_user, $id_studio, $id_jadwal, $total_tagihan_numeric, $tanggal, $jam_booking, $paket, $expired_at);
 
 if (!$stmt->execute()) {
     echo "<script>
@@ -230,11 +230,12 @@ $_SESSION['booking_data'] = [
     'nama' => $nama,
     'durasi' => $durasi,
     'paket' => $paket,
-    'status_pembayaran' => 'belum_dibayar'
+    'status_pembayaran' => 'belum_dibayar',
+    'expired_at' => $expired_at
 ];
 
 echo "<script>
-    alert('✅ Booking berhasil dibuat!\\n\\nID Order: {$id_order}');
+    alert('✅ Booking berhasil dibuat!\\n\\nID Order: {$id_order}\\n\\n⏰ Booking akan expire dalam 2 jam jika tidak dibayar DP.');
 </script>";
 
 header("Location: ketentuan.php");
