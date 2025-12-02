@@ -226,36 +226,49 @@ if (!$result_ulasan) {
         <div class="row g-3">
           <!-- Studio A -->
           <div class="col-md-6">
-            <div class="card h-100 shadow-lg overflow-hidden rounded-4">
+            <div class="card h-100 shadow-lg overflow-hidden rounded-4 d-flex flex-column">
               <div class="ratio ratio-16x9"
                 style="background:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1600&auto=format&fit=crop') center/cover">
               </div>
-              <div class="card-body">
+              <div class="card-body d-flex flex-column">
                 <h3 class="h5">Studio A – Studio Gold</h3>
                 <p class="text-secondary">Ruang live untuk band full, drum tracking, dan live session video.</p>
-               <p>- Reguler = 50K/jam<br>- Paket 2 jam = 90K<br>- Paket 3 jam = 130K</p>
+                <div class="mb-3">
+                  <p class="mb-1">- Reguler = 50K/jam</p>
+                  <p class="mb-1">- Paket 2 jam = 90K</p>
+                  <p class="mb-0">- Paket 3 jam = 130K</p>
+                </div>
               
-                <div class="d-flex gap-2">
-                  <a href="booking.php?studio=gold" class="btn btn-outline-primary flex-fill">Booking</a>
-                  <a href="lihat_jadwal.php?studio=gold" class="btn btn-outline-success flex-fill">Lihat Jadwal</a>
+                <!-- Spacer untuk mendorong tombol ke bawah -->
+                <div class="mt-auto">
+                  <div class="d-flex gap-2">
+                    <a href="booking.php?studio=gold" class="btn btn-outline-primary flex-fill">Booking</a>
+                    <a href="lihat_jadwal.php?studio=gold" class="btn btn-outline-success flex-fill">Lihat Jadwal</a>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
           <!-- Studio B -->
           <div class="col-md-6">
-            <div class="card h-100 shadow-lg overflow-hidden rounded-4">
+            <div class="card h-100 shadow-lg overflow-hidden rounded-4 d-flex flex-column">
               <div class="ratio ratio-16x9"
                 style="background:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1600&auto=format&fit=crop') center/cover">
               </div>
-              <div class="card-body">
+              <div class="card-body d-flex flex-column">
                 <h3 class="h5">Studio B – Studio Bronze</h3>
                 <p class="text-secondary">Ruang live untuk band full, drum tracking, dan live session video.</p>
-                <p>Reguler = 35K/jam (ALL INCLUDE NO KEYBOARD)<br>+ KEYBOARD = 5K/jam</p>
+                <div class="mb-3">
+                  <p class="mb-1">Reguler = 35K/jam (ALL INCLUDE NO KEYBOARD)</p>
+                  <p class="mb-0">+ KEYBOARD = 5K/jam</p>
+                </div>
 
-                <div class="d-flex gap-2">
-                  <a href="booking.php?studio=bronze" class="btn btn-outline-primary flex-fill">Booking</a>
-                  <a href="lihat_jadwal.php?studio=bronze" class="btn btn-outline-success flex-fill">Lihat Jadwal</a>
+                <!-- Spacer untuk mendorong tombol ke bawah -->
+                <div class="mt-auto">
+                  <div class="d-flex gap-2">
+                    <a href="booking.php?studio=bronze" class="btn btn-outline-primary flex-fill">Booking</a>
+                    <a href="lihat_jadwal.php?studio=bronze" class="btn btn-outline-success flex-fill">Lihat Jadwal</a>
+                  </div>
                 </div>
               </div>
             </div>
