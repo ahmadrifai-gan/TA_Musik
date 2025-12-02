@@ -139,6 +139,7 @@ $result = $stmt->get_result();
     <meta charset="UTF-8">
     <title>Riwayat Reservasi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -270,6 +271,14 @@ $result = $stmt->get_result();
         .btn-konfirmasi-batal:hover {
             background-color: #5a6268;
         }
+        /* countdown */
+        .countdown {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .countdown.expired {
+            color: #b02a37;
+        }
     </style>
 </head>
 <body>
@@ -346,7 +355,13 @@ $result = $stmt->get_result();
                 <tbody>
                     <?php if ($result->num_rows > 0): ?>
                         <?php while ($row = $result->fetch_assoc()): ?>
-                            <tr>
+                            <?php
+                                // ambil expired_at (bila ada)
+                                $expiredAt = $row['expired_at'] ?? null; // expecting DATETIME or NULL
+                            ?>
+                            <tr data-id="<?= $row['id_order'] ?>"
+                                data-expired="<?= $expiredAt ? date('c', strtotime($expiredAt)) : '' ?>"
+                                data-statuspembayaran="<?= htmlspecialchars($row['status_pembayaran']) ?>">
                                 <td><?= $row['id_order'] ?></td>
                                 <td><?= htmlspecialchars($_SESSION['nama_lengkap'] ?? $namaLengkap) ?></td>
                                 <td>
@@ -375,12 +390,9 @@ $result = $stmt->get_result();
                                     $classPaket = 'paket-badge';
                                     $paketText = '';
                                     
-                                    // Jika paket kosong atau hanya "-", tampilkan teks default
                                     if (empty($paket) || $paket === '-' || $paket === 'without' || $paket === 'null') {
                                         $paketText = '<span class="text-muted">Tidak ada info paket</span>';
-                                    }
-                                    // Studio Bronze
-                                    elseif (stripos($namaStudio, 'bronze') !== false) {
+                                    } elseif (stripos($namaStudio, 'bronze') !== false) {
                                         if (stripos($paket, 'tanpa') !== false || stripos($paket, 'without') !== false || stripos($paket, '35') !== false) {
                                             $classPaket .= ' paket-bronze-tanpa';
                                             $paketText = 'Tanpa Keyboard<br>(35K/jam)';
@@ -388,12 +400,9 @@ $result = $stmt->get_result();
                                             $classPaket .= ' paket-bronze-dengan';
                                             $paketText = 'Dengan Keyboard<br>(40K/jam)';
                                         } else {
-                                            // Tampilkan paket apa adanya jika tidak cocok
                                             $paketText = htmlspecialchars($paket);
                                         }
-                                    }
-                                    // Studio Gold
-                                    elseif (stripos($namaStudio, 'gold') !== false) {
+                                    } elseif (stripos($namaStudio, 'gold') !== false) {
                                         if (stripos($paket, 'reguler') !== false || stripos($paket, 'regular') !== false || stripos($paket, '50') !== false) {
                                             $classPaket .= ' paket-gold-reguler';
                                             $paketText = 'Reguler<br>(50K/jam)';
@@ -404,16 +413,12 @@ $result = $stmt->get_result();
                                             $classPaket .= ' paket-gold-3jam';
                                             $paketText = 'Paket 3 jam<br>(130K)';
                                         } else {
-                                            // Tampilkan paket apa adanya jika tidak cocok
                                             $paketText = htmlspecialchars($paket);
                                         }
-                                    }
-                                    // Studio lainnya
-                                    else {
+                                    } else {
                                         $paketText = htmlspecialchars($paket);
                                     }
                                     
-                                    // Tampilkan badge hanya jika ada kelas paket yang valid
                                     if ($classPaket !== 'paket-badge') {
                                         echo "<span class='$classPaket'>" . $paketText . "</span>";
                                     } else {
@@ -437,6 +442,7 @@ $result = $stmt->get_result();
                                     }
                                     ?>
                                 </td>
+                                <!-- KOLOM STATUS PEMBAYARAN -->
                                 <td>
                                     <?php
                                      if ($row['status_pembayaran'] === 'belum_dibayar') {
@@ -450,13 +456,31 @@ $result = $stmt->get_result();
                                      }
                                     ?>
                                 </td>
+                                
+                                <!-- KOLOM BUKTI DP + COUNTDOWN -->
                                 <td>
-                                    <?php if (!empty($row['bukti_dp'])): ?>
-                                        <a href="uploads/bukti_dp/<?= urlencode($row['bukti_dp']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">Lihat</a>
+                                    <?php if ($row['status_pembayaran'] === 'belum_dibayar' && $row['status'] !== 'dibatalkan'): ?>
+                                        <div>
+                                            <div class="small-muted mb-1">Waktu tersisa membayar DP:</div>
+                                            <div id="timer-<?= $row['id_order'] ?>" class="countdown">--:--:--</div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <span class="text-muted d-block mb-2">Belum upload</span>
+                                            <a href="ketentuan.php?id_order=<?= $row['id_order'] ?>" class="btn btn-sm" style="background-color: #FFD700; color: #000; font-weight: 600; border: none;">
+                                                <i class="bi bi-cloud-upload"></i> Upload DP
+                                            </a>
+                                        </div>
+                                    <?php elseif (!empty($row['bukti_dp'])): ?>
+                                        <a href="uploads/bukti_dp/<?= urlencode($row['bukti_dp']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-file-earmark-image"></i> Lihat
+                                        </a>
+                                    <?php elseif ($row['status'] === 'dibatalkan'): ?>
+                                        <span class="text-muted">-</span>
                                     <?php else: ?>
                                         <span class="text-muted">Belum upload</span>
                                     <?php endif; ?>
                                 </td>
+                                                
                                 <td>
                                     <?php if ($row['status'] !== 'dibatalkan'): ?>
                                         <button class="btn btn-blue btn-sm mb-1" 
@@ -486,7 +510,7 @@ $result = $stmt->get_result();
         </div>
     </div>
 
-    <p class="footer-note">© 2025 Reys Music Studio</p>
+    <p class="footer-note">© <?= date('Y') ?> Reys Music Studio</p>
 </div>
 
 <!-- Modal Ubah Jadwal -->
@@ -589,18 +613,12 @@ function updatePaketOptions() {
     const paketSelect = document.getElementById('paket_baru_select');
     const selectedText = studioSelect.options[studioSelect.selectedIndex].text.toLowerCase();
     
-    // Kosongkan opsi paket
     paketSelect.innerHTML = '<option value="">-- Pilih Paket --</option>';
     
-    // Tentukan jenis studio
     let jenisPaket = null;
-    if (selectedText.includes('bronze')) {
-        jenisPaket = 'bronze';
-    } else if (selectedText.includes('gold')) {
-        jenisPaket = 'gold';
-    }
+    if (selectedText.includes('bronze')) jenisPaket = 'bronze';
+    else if (selectedText.includes('gold')) jenisPaket = 'gold';
     
-    // Tambahkan opsi paket sesuai studio
     if (jenisPaket && paketStudio[jenisPaket]) {
         paketStudio[jenisPaket].forEach(paket => {
             const option = document.createElement('option');
@@ -625,12 +643,10 @@ ubahModal.addEventListener('show.bs.modal', event => {
     document.getElementById('jam_baru').value = jam;
     document.getElementById('jadwal_lama').textContent = tanggal + ', ' + jam;
     
-    // Set studio yang dipilih
     if (idStudio) {
         document.getElementById('studio_baru_select').value = idStudio;
         updatePaketOptions();
         
-        // Set paket yang dipilih
         if (paket) {
             setTimeout(() => {
                 const paketSelect = document.getElementById('paket_baru_select');
@@ -644,7 +660,6 @@ ubahModal.addEventListener('show.bs.modal', event => {
         }
     }
     
-    // Tampilkan info studio dan paket lama
     const studioText = button.closest('tr').querySelector('td:nth-child(3)').textContent.trim();
     document.getElementById('studio_paket_lama').textContent = studioText + ' - ' + (paket || 'Tidak ada info paket');
 });
@@ -672,6 +687,62 @@ document.getElementById('konfirmasiYa').addEventListener('click', function() {
     // Submit form
     document.getElementById('formUbahJadwal').submit();
 });
+
+/* ===== TIMER COUNTDOWN PER ROW ===== */
+/* sinkronisasi server time untuk mengurangi drift */
+const serverNowMs = <?= time() * 1000 ?>;
+const clientNowMs = Date.now();
+const drift = clientNowMs - serverNowMs; // positive if client clock ahead
+
+function startRowTimers() {
+    document.querySelectorAll('tr[data-id]').forEach(row => {
+        const id = row.getAttribute('data-id');
+        const expiredIso = row.getAttribute('data-expired');
+        const statusPembayaran = row.getAttribute('data-statuspembayaran');
+
+        const timerEl = document.getElementById('timer-' + id);
+        if (!timerEl) return;
+
+        // only run for belum_dibayar with expired timestamp
+        if (!expiredIso || statusPembayaran !== 'belum_dibayar') {
+            timerEl.textContent = '-';
+            return;
+        }
+
+        const expiredMs = new Date(expiredIso).getTime();
+
+        const intervalId = setInterval(() => {
+            const now = Date.now() - drift;
+            const diff = expiredMs - now;
+
+            if (diff <= 0) {
+                clearInterval(intervalId);
+                timerEl.textContent = 'EXPIRED';
+                timerEl.classList.add('expired');
+
+                // Inform user and refresh page so server-side can mark as dibatalkan
+                alert('⏰ Waktu pembayaran DP untuk booking #' + id + ' telah habis. Booking akan dibatalkan secara otomatis.');
+                // reload halaman untuk memicu server-side update (existing logic handles expired check)
+                window.location.href = 'riwayat_reservasi.php';
+                return;
+            }
+
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            timerEl.textContent = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+
+            // visual hint when <10 minutes
+            if (diff < (10 * 60 * 1000)) {
+                timerEl.style.color = '#b02a37';
+            }
+        }, 1000);
+    });
+}
+
+// start timers on load
+startRowTimers();
 </script>
 </body>
 </html>

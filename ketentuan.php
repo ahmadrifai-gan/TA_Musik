@@ -2,6 +2,40 @@
 session_start();
 require "config/koneksi.php";
 
+// ===== BAGIAN BARU: CEK APAKAH DARI RIWAYAT RESERVASI =====
+if (isset($_GET['id_order']) && !empty($_GET['id_order'])) {
+    $id_order = (int)$_GET['id_order'];
+    
+    // Cek apakah user sudah login
+    if (!isset($_SESSION['user_id'])) {
+        echo "<script>
+            alert('Anda harus login terlebih dahulu!');
+            window.location.href='login.php';
+        </script>";
+        exit;
+    }
+    
+    $id_user = $_SESSION['user_id'];
+    
+    // Ambil data booking berdasarkan id_order
+    $stmt = $koneksi->prepare("SELECT * FROM booking WHERE id_order = ? AND id_user = ? LIMIT 1");
+    $stmt->bind_param("ii", $id_order, $id_user);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $booking_data = $result->fetch_assoc();
+        $_SESSION['booking_data'] = $booking_data;
+        $_SESSION['from_riwayat'] = true; // Tandai bahwa ini dari riwayat
+    } else {
+        echo "<script>
+            alert('Data booking tidak ditemukan!');
+            window.location.href='riwayat_reservasi.php';
+        </script>";
+        exit;
+    }
+}
+
 // Cek session booking
 if (!isset($_SESSION['booking_data'])) {
     header("Location: index.php");
@@ -21,8 +55,14 @@ if (isset($_POST['lewati'])) {
         $stmt->close();
     }
     
-    // Redirect ke konfirmasi booking
-    header("Location: konfirmasi_booking.php");
+    // Jika dari riwayat, redirect ke riwayat
+    if (isset($_SESSION['from_riwayat']) && $_SESSION['from_riwayat'] === true) {
+        unset($_SESSION['from_riwayat']);
+        header("Location: riwayat_reservasi.php");
+    } else {
+        // Redirect ke konfirmasi booking
+        header("Location: konfirmasi_booking.php");
+    }
     exit;
 }
 ?>
@@ -238,9 +278,15 @@ if (isset($_POST['lewati'])) {
         </div>
 
         <div class="back-link">
-            <a href="booking.php?studio=<?= $_SESSION['booking_data']['id_studio'] == 'ST001' ? 'bronze' : 'gold' ?>">
-                <i class="bi bi-arrow-left-circle"></i> Kembali ke Halaman Booking
-            </a>
+            <?php if (isset($_SESSION['from_riwayat']) && $_SESSION['from_riwayat'] === true): ?>
+                <a href="riwayat_reservasi.php">
+                    <i class="bi bi-arrow-left-circle"></i> Kembali ke Riwayat Reservasi
+                </a>
+            <?php else: ?>
+                <a href="booking.php?studio=<?= $_SESSION['booking_data']['id_studio'] == 'ST001' ? 'bronze' : 'gold' ?>">
+                    <i class="bi bi-arrow-left-circle"></i> Kembali ke Halaman Booking
+                </a>
+            <?php endif; ?>
         </div>
     </div>
 </div>
