@@ -302,6 +302,18 @@ function reloadSlots(){
     alert('Silakan pilih tanggal terlebih dahulu!');
     return;
   }
+  
+  // 🔥 VALIDASI: Tanggal tidak boleh sebelum hari ini
+  const selectedDate = new Date(tanggal);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  if (selectedDate < today) {
+    alert('⚠️ Tidak dapat melakukan booking untuk tanggal yang sudah lewat!\nSilakan pilih tanggal hari ini atau setelahnya.');
+    document.getElementById('tanggal').value = '';
+    return;
+  }
+  
   const studio = document.getElementById('studio_nama').value;
   // reload page dengan param check_date supaya PHP mengambil booked slots
   window.location.href = `?studio=${encodeURIComponent(studio)}&check_date=${encodeURIComponent(tanggal)}`;
@@ -387,12 +399,13 @@ document.addEventListener('DOMContentLoaded', function(){
 
         <div class="mb-3">
           <label class="form-label">Tanggal</label>
-          <input type="date" id="tanggal" name="tanggal" class="form-control" value="<?= htmlspecialchars($check_date) ?>" onchange="reloadSlots()" required>
+          <input type="date" id="tanggal" name="tanggal" class="form-control" value="<?= htmlspecialchars($check_date) ?>" min="<?= date('Y-m-d') ?>" onchange="reloadSlots()" required>
+          <small class="text-muted">📅 Booking hanya dapat dilakukan untuk hari ini atau setelahnya</small>
         </div>
 
         <div class="mb-3">
           <label class="form-label">Pilih Jam</label><br>
-          <small class="small-muted"  >⚠️ Slot abu-abu sudah dibooking oleh user lain. Untuk paket multi-jam, semua slot harus tersedia.</small>
+          <small class="small-muted">⚠️ Slot abu-abu sudah dibooking oleh user lain. Untuk paket multi-jam, semua slot harus tersedia.</small>
           <?php if($check_date && count($bookedSlots) > 0): ?>
             <br><small class="text-danger">🔴 <strong><?= count($bookedSlots) ?> slot</strong> sudah dibooking untuk tanggal ini</small>
           <?php endif; ?>
@@ -436,6 +449,16 @@ function validateForm() {
     return false;
   }
   
+  // 🔥 VALIDASI: Tanggal tidak boleh sebelum hari ini
+  const selectedDate = new Date(tanggal);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  if (selectedDate < today) {
+    alert('⚠️ Tidak dapat melakukan booking untuk tanggal yang sudah lewat!\nSilakan pilih tanggal hari ini atau setelahnya.');
+    return false;
+  }
+  
   const jamBooking = document.getElementById('jam_booking').value;
   if (!jamBooking) {
     alert('⚠️ Silakan pilih jam booking!');
@@ -460,4 +483,4 @@ function validateForm() {
 }
 </script>
 </body>
-</html> 
+</html>
