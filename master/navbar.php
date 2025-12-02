@@ -40,11 +40,16 @@
                         <div class="dropdown-content-body">
                             <ul>
                                 <li>
-                                    <a href="profile.php"><i class="icon-user"></i> <span>Profile</span></a>
+                                    <a href="../admin/profile.php"><i class="icon-user"></i> <span>Profile</span></a>
                                 </li>
-                                <li>
-                                    <a href="#" onclick="confirmLogout(event)"><i class="icon-key"></i> <span>Logout</span></a>
-                                </li>
+                                <li><a href="../index.php"  onclick="confirmLogout()"><i class="icon-key"></i> <span>Logout</span></a></li>
+                                <script>
+                                    function confirmLogout() {
+                                        if (confirm("Apakah Anda yakin ingin logout?")) {
+                                            window.location.href = "../logout.php";
+                                        }
+                                    }
+                                </script>
                             </ul>
                         </div>
                     </div>
@@ -147,12 +152,3 @@
     }
 }
 </style>
-
-<script>
-function confirmLogout(event) {
-    event.preventDefault(); // Mencegah link default
-    if (confirm("Apakah Anda yakin ingin logout?")) {
-        window.location.href = "../logout.php";
-    }
-}
-</script>

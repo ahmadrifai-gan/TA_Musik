@@ -64,7 +64,7 @@
             <div class="col-lg-6">
                 <div class="card">
                     <div class="card-body">
-                        <h4 class="card-title">Grafik Pendapatam</h4>
+                        <h4 class="card-title">Grafik Pendapatan</h4>
                         <canvas id="lineChart" height="220"></canvas>
                     </div>
                 </div>
