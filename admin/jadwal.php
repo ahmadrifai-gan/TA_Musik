@@ -144,17 +144,29 @@ if (!empty($_GET['tanggal'])) {
 }
 
 // Tampilkan jadwal dari hari ini dan masa depan
+$where = [];
+if (!empty($_GET['studio'])) {
+    $studio = mysqli_real_escape_string($koneksi, $_GET['studio']);
+    $where[] = "j.id_studio = '$studio'";
+}
+if (!empty($_GET['tanggal'])) {
+    $tanggal = mysqli_real_escape_string($koneksi, $_GET['tanggal']);
+    $where[] = "j.tanggal = '$tanggal'";
+}
+
+// Tampilkan jadwal dari hari ini dan masa depan
 $where[] = "j.tanggal >= CURDATE()";
 $where_sql = "WHERE " . implode(" AND ", $where);
 
+// PERBAIKAN QUERY: Cek status booking = 'dibatalkan' juga
 $sql = "
     SELECT 
         j.*, 
         s.nama AS nama_studio,
         CASE 
-    WHEN b.id_order IS NOT NULL THEN 'Dibooking'
-    ELSE 'Belum Dibooking'
-END AS status
+            WHEN b.id_order IS NOT NULL AND b.status != 'dibatalkan' THEN 'Dibooking'
+            ELSE 'Belum Dibooking'
+        END AS status
     FROM jadwal j
     JOIN studio s ON j.id_studio = s.id_studio
     LEFT JOIN booking b ON j.id_jadwal = b.id_jadwal
@@ -162,6 +174,7 @@ END AS status
     ORDER BY j.tanggal ASC, j.jam_mulai ASC
 ";
 $result = mysqli_query($koneksi, $sql);
+
 
 require "../master/header.php";
 require "../master/navbar.php";

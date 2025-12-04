@@ -78,14 +78,56 @@ if (isset($_POST['ubah_jadwal'])) {
 // Aksi batal
 if (isset($_GET['batal'])) {
     $id_order = $_GET['batal'];
-    $update = $koneksi->prepare("UPDATE booking SET status = 'dibatalkan' WHERE id_order = ? AND id_user = ?");
-    $update->bind_param("ii", $id_order, $id_user);
-    $update->execute();
-    $update->close();
-    echo "<script>
-        alert('Reservasi berhasil dibatalkan.');
-        window.location.href='riwayat_reservasi.php';
-    </script>";
+    
+    // Mulai transaksi untuk memastikan kedua update berhasil
+    $koneksi->begin_transaction();
+    
+    try {
+        // 1. Ambil id_jadwal dari booking yang akan dibatalkan
+        $getJadwal = $koneksi->prepare("SELECT id_jadwal FROM booking WHERE id_order = ? AND id_user = ?");
+        $getJadwal->bind_param("ii", $id_order, $id_user);
+        $getJadwal->execute();
+        $resultJadwal = $getJadwal->get_result();
+        
+        if ($resultJadwal->num_rows > 0) {
+            $rowJadwal = $resultJadwal->fetch_assoc();
+            $id_jadwal = $rowJadwal['id_jadwal'];
+            
+            // 2. Update status booking menjadi 'dibatalkan'
+            $updateBooking = $koneksi->prepare("UPDATE booking SET status = 'dibatalkan' WHERE id_order = ? AND id_user = ?");
+            $updateBooking->bind_param("ii", $id_order, $id_user);
+            $updateBooking->execute();
+            
+            // 3. Update status jadwal menjadi 'Belum Dibooking' dan hapus referensi id_order
+            if ($id_jadwal) {
+                $updateJadwal = $koneksi->prepare("UPDATE jadwal SET status = 'Belum Dibooking', id_order = NULL WHERE id_jadwal = ?");
+                $updateJadwal->bind_param("i", $id_jadwal);
+                $updateJadwal->execute();
+                $updateJadwal->close();
+            }
+            
+            $updateBooking->close();
+            $getJadwal->close();
+            
+            // Commit transaksi jika semua berhasil
+            $koneksi->commit();
+            
+            echo "<script>
+                alert('Reservasi berhasil dibatalkan dan jadwal telah dibebaskan.');
+                window.location.href='riwayat_reservasi.php';
+            </script>";
+        } else {
+            throw new Exception("Booking tidak ditemukan");
+        }
+        
+    } catch (Exception $e) {
+        // Rollback jika ada error
+        $koneksi->rollback();
+        echo "<script>
+            alert('Gagal membatalkan reservasi: " . $e->getMessage() . "');
+            window.location.href='riwayat_reservasi.php';
+        </script>";
+    }
     exit;
 }
 
