@@ -112,9 +112,7 @@ if (isset($_POST['update'])) {
 
 
 <style>
-  * {
-    font-family: 'Poppins', sans-serif;
-  }
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
 
   .content-body {
     background-color: #f5f7fa;
@@ -130,11 +128,11 @@ if (isset($_POST['update'])) {
   }
 
   .page-header h4 {
-    font-size: 24px;
-    font-weight: 600;
-    color: #2c3e50;
-    margin: 0;
-  }
+    font-size: 28px;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 20px;
+}
 
   .btn-add {
     background-color: #28a745;
@@ -396,12 +394,11 @@ if (isset($_POST['update'])) {
   <div class="container-fluid">
 
     <div class="page-header">
-      <h4>Manajemen Order</h4>
-      <button class="btn btn-add" data-toggle="modal" data-target="#modalTambah">
+    <h4>Manajemen Order</h4>
+    <a href="tambah_booking.php" class="btn btn-add">
         <i class="fa fa-plus"></i> Tambah Order
-      </button>
-    </div>
-
+    </a>
+</div>
     <div class="card">
       <div class="table-wrapper">
         <div class="table-responsive">
@@ -456,7 +453,8 @@ if (isset($_POST['update'])) {
                   b.jam_booking,
                   b.total_tagihan,
                   b.status,
-                  b.status_pembayaran
+                  b.status_pembayaran,
+                  b.bukti_dp
                 FROM booking b
                 JOIN user u ON b.id_user = u.id_user
                 JOIN studio s ON b.id_studio = s.id_studio
@@ -503,7 +501,8 @@ if (isset($_POST['update'])) {
                     data-jam="<?= htmlspecialchars($row['jam_booking']) ?>"
                     data-total="<?= htmlspecialchars($row['total_tagihan']) ?>"
                     data-status="<?= htmlspecialchars($row['status']) ?>"
-                    data-pembayaran="<?= htmlspecialchars($row['status_pembayaran']) ?>">
+                    data-pembayaran="<?= htmlspecialchars($row['status_pembayaran']) ?>"
+                    data-bukti-dp="<?= htmlspecialchars($row['bukti_dp'] ?? '') ?>">
                     <i class="fa fa-eye"></i> Lihat
                   </button>
 
@@ -614,7 +613,9 @@ if (isset($_POST['update'])) {
       <form method="POST">
         <div class="modal-header">
           <h5 class="modal-title">Tambah Order</h5>
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -678,7 +679,9 @@ if (isset($_POST['update'])) {
       <form method="POST">
         <div class="modal-header">
           <h5 class="modal-title">Edit Order</h5>
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
         <div class="modal-body">
           <input type="hidden" name="edit_id" id="edit_id">
@@ -742,7 +745,9 @@ if (isset($_POST['update'])) {
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Detail Order</h5>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body">
         <p><strong>Nama Pelanggan:</strong> <span id="detailNama"></span></p>
@@ -752,6 +757,10 @@ if (isset($_POST['update'])) {
         <p><strong>Total Tagihan:</strong> Rp <span id="detailTotal"></span></p>
         <p><strong>Status:</strong> <span id="detailStatus"></span></p>
         <p><strong>Status Pembayaran:</strong> <span id="detailPembayaran"></span></p>
+        <div id="detailBuktiDp" style="margin-top: 20px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
       </div>
     </div>
   </div>
@@ -763,7 +772,9 @@ if (isset($_POST['update'])) {
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
         <h5 class="modal-title">Konfirmasi Hapus</h5>
-        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body">
         <p>Apakah kamu yakin ingin menghapus order ini?</p>
@@ -801,9 +812,39 @@ $(document).ready(function(){
     else if(st === 'dibatalkan') $('#detailStatus').html('<span class="badge badge-danger">Dibatalkan</span>');
     else $('#detailStatus').html('<span class="badge badge-warning">Menunggu</span>');
 
+    // Tampilkan bukti DP jika ada
+    let buktiDp = $(this).data('bukti-dp');
+    let buktiHtml = '';
+    if(buktiDp && buktiDp.trim() !== '') {
+      let fileExt = buktiDp.split('.').pop().toLowerCase();
+      let filePath = '../uploads/bukti_dp/' + buktiDp;
+      
+      buktiHtml = '<hr><p><strong>Bukti DP:</strong></p>';
+      
+      if(['jpg', 'jpeg', 'png', 'gif'].includes(fileExt)) {
+        buktiHtml += '<div class="mt-2 mb-2">';
+        buktiHtml += '<img src="' + filePath + '" alt="Bukti DP" class="img-fluid" style="max-width: 100%; max-height: 400px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">';
+        buktiHtml += '</div>';
+        buktiHtml += '<a href="' + filePath + '" target="_blank" class="btn btn-sm btn-outline-primary">';
+        buktiHtml += '<i class="fa fa-external-link"></i> Lihat File Lengkap';
+        buktiHtml += '</a>';
+      } else {
+        buktiHtml += '<div class="text-center p-3 mb-2" style="background-color: #f8f9fa; border-radius: 8px;">';
+        buktiHtml += '<i class="fa fa-file-pdf" style="font-size: 48px; color: #e74c3c;"></i>';
+        buktiHtml += '<p class="mb-0 mt-2">File PDF</p>';
+        buktiHtml += '</div>';
+        buktiHtml += '<a href="' + filePath + '" target="_blank" class="btn btn-sm btn-outline-primary">';
+        buktiHtml += '<i class="fa fa-external-link"></i> Lihat File Lengkap';
+        buktiHtml += '</a>';
+      }
+    } else {
+      buktiHtml = '<hr><p><strong>Bukti DP:</strong> <span class="text-muted">Belum ada bukti DP</span></p>';
+    }
+    
+    $('#detailBuktiDp').html(buktiHtml);
     $('#modalDetail').modal('show');
   });
-
+ 
   // Edit - YANG SUDAH DIPERBAIKI
   $(document).on('click', '.editBtn', function(){
     var id = $(this).data('id');
@@ -848,7 +889,13 @@ $(document).ready(function(){
     $('#hapus_id').val($(this).data('id'));
     $('#modalHapus').modal('show');
   });
+
+  // PERBAIKAN: Event handler untuk memastikan tombol close berfungsi
+  $(document).on('click', '.close, [data-dismiss="modal"]', function(e) {
+    e.preventDefault();
+    $(this).closest('.modal').modal('hide');
+  });
 });
 </script>
 
-<?php require "../master/footer.php"; ?>
+<?php require "../master/footer.php";?>

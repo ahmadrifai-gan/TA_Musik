@@ -132,6 +132,22 @@ try {
     }
     $id_order = $stmt->insert_id;
 
+require 'config/config_email.php'; // (DITAMBAHKAN)
+
+// Data email yang akan dikirim
+$dataEmail = [
+    'id_order' => $id_order,
+    'nama' => $nama,
+    'id_studio' => $id_studio,
+    'tanggal' => $tanggal,
+    'jam_booking' => $jam_booking,
+    'paket' => $paket,
+    'total' => $total_tagihan_numeric
+];
+
+// Proses kirim email
+$emailStatus = sendBookingEmail($dataEmail);
+
     // commit
     $koneksi->commit();
     

@@ -9,7 +9,7 @@ $bulanList = [
 ];
 
 // Ambil data booking (reservasi)
-$q1 = "SELECT MONTH(Tanggal) AS bulan, COUNT(*) AS total_reservasi
+$q1 = "SELECT MONTH(Tanggal) AS bulan,  COUNT(*) AS total_reservasi
        FROM booking
        WHERE status != 'dibatalkan'
        GROUP BY MONTH(Tanggal)";

@@ -110,14 +110,56 @@ if (isset($_POST['ubah_jadwal'])) {
 // Aksi batal manual
 if (isset($_GET['batal'])) {
     $id_order = $_GET['batal'];
-    $update = $koneksi->prepare("UPDATE booking SET status = 'dibatalkan' WHERE id_order = ? AND id_user = ?");
-    $update->bind_param("ii", $id_order, $id_user);
-    $update->execute();
-    $update->close();
-    echo "<script>
-        alert('Reservasi berhasil dibatalkan.');
-        window.location.href='riwayat_reservasi.php';
-    </script>";
+    
+    // Mulai transaksi untuk memastikan kedua update berhasil
+    $koneksi->begin_transaction();
+    
+    try {
+        // 1. Ambil id_jadwal dari booking yang akan dibatalkan
+        $getJadwal = $koneksi->prepare("SELECT id_jadwal FROM booking WHERE id_order = ? AND id_user = ?");
+        $getJadwal->bind_param("ii", $id_order, $id_user);
+        $getJadwal->execute();
+        $resultJadwal = $getJadwal->get_result();
+        
+        if ($resultJadwal->num_rows > 0) {
+            $rowJadwal = $resultJadwal->fetch_assoc();
+            $id_jadwal = $rowJadwal['id_jadwal'];
+            
+            // 2. Update status booking menjadi 'dibatalkan'
+            $updateBooking = $koneksi->prepare("UPDATE booking SET status = 'dibatalkan' WHERE id_order = ? AND id_user = ?");
+            $updateBooking->bind_param("ii", $id_order, $id_user);
+            $updateBooking->execute();
+            
+            // 3. Update status jadwal menjadi 'Belum Dibooking' dan hapus referensi id_order
+            if ($id_jadwal) {
+                $updateJadwal = $koneksi->prepare("UPDATE jadwal SET status = 'Belum Dibooking', id_order = NULL WHERE id_jadwal = ?");
+                $updateJadwal->bind_param("i", $id_jadwal);
+                $updateJadwal->execute();
+                $updateJadwal->close();
+            }
+            
+            $updateBooking->close();
+            $getJadwal->close();
+            
+            // Commit transaksi jika semua berhasil
+            $koneksi->commit();
+            
+            echo "<script>
+                alert('Reservasi berhasil dibatalkan dan jadwal telah dibebaskan.');
+                window.location.href='riwayat_reservasi.php';
+            </script>";
+        } else {
+            throw new Exception("Booking tidak ditemukan");
+        }
+        
+    } catch (Exception $e) {
+        // Rollback jika ada error
+        $koneksi->rollback();
+        echo "<script>
+            alert('Gagal membatalkan reservasi: " . $e->getMessage() . "');
+            window.location.href='riwayat_reservasi.php';
+        </script>";
+    }
     exit;
 }
 
@@ -171,6 +213,7 @@ $result = $stmt->get_result();
     <title>Riwayat Reservasi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -306,6 +349,14 @@ $result = $stmt->get_result();
         .timer-expired .timer-countdown {
             color: #fff;
         }
+        /* countdown */
+        .countdown {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .countdown.expired {
+            color: #b02a37;
+        }
     </style>
 </head>
 <body>
@@ -383,7 +434,13 @@ $result = $stmt->get_result();
                 <tbody>
                     <?php if ($result->num_rows > 0): ?>
                         <?php while ($row = $result->fetch_assoc()): ?>
-                            <tr>
+                            <?php
+                                // ambil expired_at (bila ada)
+                                $expiredAt = $row['expired_at'] ?? null; // expecting DATETIME or NULL
+                            ?>
+                            <tr data-id="<?= $row['id_order'] ?>"
+                                data-expired="<?= $expiredAt ? date('c', strtotime($expiredAt)) : '' ?>"
+                                data-statuspembayaran="<?= htmlspecialchars($row['status_pembayaran']) ?>">
                                 <td><?= $row['id_order'] ?></td>
                                 <td><?= htmlspecialchars($_SESSION['nama_lengkap'] ?? $namaLengkap) ?></td>
                                 <td>
@@ -415,6 +472,7 @@ $result = $stmt->get_result();
                                         $paketText = '<span class="text-muted">Tidak ada info paket</span>';
                                     }
                                     elseif (stripos($namaStudio, 'bronze') !== false) {
+                                    } elseif (stripos($namaStudio, 'bronze') !== false) {
                                         if (stripos($paket, 'tanpa') !== false || stripos($paket, 'without') !== false || stripos($paket, '35') !== false) {
                                             $classPaket .= ' paket-bronze-tanpa';
                                             $paketText = 'Tanpa Keyboard<br>(35K/jam)';
@@ -426,6 +484,7 @@ $result = $stmt->get_result();
                                         }
                                     }
                                     elseif (stripos($namaStudio, 'gold') !== false) {
+                                    } elseif (stripos($namaStudio, 'gold') !== false) {
                                         if (stripos($paket, 'reguler') !== false || stripos($paket, 'regular') !== false || stripos($paket, '50') !== false) {
                                             $classPaket .= ' paket-gold-reguler';
                                             $paketText = 'Reguler<br>(50K/jam)';
@@ -440,6 +499,7 @@ $result = $stmt->get_result();
                                         }
                                     }
                                     else {
+                                    } else {
                                         $paketText = htmlspecialchars($paket);
                                     }
                                     
@@ -513,6 +573,7 @@ $result = $stmt->get_result();
                                     }
                                     ?>
                                 </td>
+                                <!-- KOLOM STATUS PEMBAYARAN -->
                                 <td>
                                     <?php
                                      if ($row['status_pembayaran'] === 'belum_dibayar') {
@@ -527,6 +588,30 @@ $result = $stmt->get_result();
                                     ?>
                                 </td>
                                 
+                                <!-- KOLOM BUKTI DP + COUNTDOWN -->
+                                <td>
+                                    <?php if ($row['status_pembayaran'] === 'belum_dibayar' && $row['status'] !== 'dibatalkan'): ?>
+                                        <div>
+                                            <div class="small-muted mb-1">Waktu tersisa membayar DP:</div>
+                                            <div id="timer-<?= $row['id_order'] ?>" class="countdown">--:--:--</div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <span class="text-muted d-block mb-2">Belum upload</span>
+                                            <a href="ketentuan.php?id_order=<?= $row['id_order'] ?>" class="btn btn-sm" style="background-color: #FFD700; color: #000; font-weight: 600; border: none;">
+                                                <i class="bi bi-cloud-upload"></i> Upload DP
+                                            </a>
+                                        </div>
+                                    <?php elseif (!empty($row['bukti_dp'])): ?>
+                                        <a href="uploads/bukti_dp/<?= urlencode($row['bukti_dp']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-file-earmark-image"></i> Lihat
+                                        </a>
+                                    <?php elseif ($row['status'] === 'dibatalkan'): ?>
+                                        <span class="text-muted">-</span>
+                                    <?php else: ?>
+                                        <span class="text-muted">Belum upload</span>
+                                    <?php endif; ?>
+                                </td>
+                                                
                                 <td>
                                     <?php if ($row['status_pembayaran'] === 'belum_dibayar' && $row['status'] !== 'dibatalkan'): ?>
                                         <div>
@@ -583,7 +668,7 @@ $result = $stmt->get_result();
         </div>
     </div>
 
-    <p class="footer-note">© 2025 Reys Music Studio</p>
+    <p class="footer-note">© <?= date('Y') ?> Reys Music Studio</p>
 </div>
 
 <!-- Modal Ubah Jadwal -->
@@ -689,11 +774,8 @@ function updatePaketOptions() {
     paketSelect.innerHTML = '<option value="">-- Pilih Paket --</option>';
     
     let jenisPaket = null;
-    if (selectedText.includes('bronze')) {
-        jenisPaket = 'bronze';
-    } else if (selectedText.includes('gold')) {
-        jenisPaket = 'gold';
-    }
+    if (selectedText.includes('bronze')) jenisPaket = 'bronze';
+    else if (selectedText.includes('gold')) jenisPaket = 'gold';
     
     if (jenisPaket && paketStudio[jenisPaket]) {
         paketStudio[jenisPaket].forEach(paket => {
@@ -860,3 +942,61 @@ setInterval(() => {
 </script>
 </body>
 </html
+/* ===== TIMER COUNTDOWN PER ROW ===== */
+/* sinkronisasi server time untuk mengurangi drift */
+const serverNowMs = <?= time() * 1000 ?>;
+const clientNowMs = Date.now();
+const drift = clientNowMs - serverNowMs; // positive if client clock ahead
+
+function startRowTimers() {
+    document.querySelectorAll('tr[data-id]').forEach(row => {
+        const id = row.getAttribute('data-id');
+        const expiredIso = row.getAttribute('data-expired');
+        const statusPembayaran = row.getAttribute('data-statuspembayaran');
+
+        const timerEl = document.getElementById('timer-' + id);
+        if (!timerEl) return;
+
+        // only run for belum_dibayar with expired timestamp
+        if (!expiredIso || statusPembayaran !== 'belum_dibayar') {
+            timerEl.textContent = '-';
+            return;
+        }
+
+        const expiredMs = new Date(expiredIso).getTime();
+
+        const intervalId = setInterval(() => {
+            const now = Date.now() - drift;
+            const diff = expiredMs - now;
+
+            if (diff <= 0) {
+                clearInterval(intervalId);
+                timerEl.textContent = 'EXPIRED';
+                timerEl.classList.add('expired');
+
+                // Inform user and refresh page so server-side can mark as dibatalkan
+                alert('⏰ Waktu pembayaran DP untuk booking #' + id + ' telah habis. Booking akan dibatalkan secara otomatis.');
+                // reload halaman untuk memicu server-side update (existing logic handles expired check)
+                window.location.href = 'riwayat_reservasi.php';
+                return;
+            }
+
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            timerEl.textContent = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+
+            // visual hint when <10 minutes
+            if (diff < (10 * 60 * 1000)) {
+                timerEl.style.color = '#b02a37';
+            }
+        }, 1000);
+    });
+}
+
+// start timers on load
+startRowTimers();
+</script>
+</body>
+</html>
