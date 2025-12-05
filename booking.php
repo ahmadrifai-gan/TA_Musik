@@ -97,13 +97,72 @@ $slots = [
 <title>Booking Studio</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-.time-slot { display:inline-block; margin:4px; padding:8px 12px; border:1px solid #ccc; border-radius:8px; cursor:pointer; user-select:none; transition:all .2s; }
-.time-slot.booked { background:#e0e0e0; color:#777; border-color:#999; cursor:not-allowed; position:relative; }
-.time-slot.booked::after{ content:"DIBOOKING"; position:absolute; top:-8px; right:-8px; background:#dc3545; color:#fff; font-size:9px; padding:2px 5px; border-radius:3px; font-weight:bold;}
-.time-slot.active { background:#0d6efd; color:#fff; border-color:#0d6efd; }
-.card.bronze { background:#b46b2b; color:#fff; }
-.card.gold { background:#ffda00; color:#000; }
-.small-muted { font-size: .9rem; color: #6c757d; }
+.time-slot { 
+    display:inline-block; 
+    margin:4px; 
+    padding:8px 12px; 
+    border:1px solid #ccc; 
+    border-radius:8px; 
+    cursor:pointer; 
+    user-select:none; 
+    transition:all .2s; 
+}
+.time-slot.booked { 
+    background:#e0e0e0; 
+    color:#777; 
+    border-color:#999; 
+    cursor:not-allowed; 
+    position:relative; 
+}
+.time-slot.booked::after{ 
+    content:"DIBOOKING"; 
+    position:absolute; 
+    top:-8px; 
+    right:-8px; 
+    background:#dc3545; 
+    color:#fff; 
+    font-size:9px; 
+    padding:2px 5px; 
+    border-radius:3px; 
+    font-weight:bold;
+}
+.time-slot.past { 
+    background:#f8d7da; 
+    color:#721c24; 
+    border-color:#f5c6cb; 
+    cursor:not-allowed; 
+    opacity:0.6; 
+    position:relative; 
+}
+.time-slot.past::after{ 
+    content:"LEWAT"; 
+    position:absolute; 
+    top:-8px; 
+    right:-8px; 
+    background:#6c757d; 
+    color:#fff; 
+    font-size:9px; 
+    padding:2px 5px; 
+    border-radius:3px; 
+    font-weight:bold;
+}
+.time-slot.active { 
+    background:#0d6efd; 
+    color:#fff; 
+    border-color:#0d6efd; 
+}
+.card.bronze { 
+    background:#b46b2b; 
+    color:#fff; 
+}
+.card.gold { 
+    background:#ffda00; 
+    color:#000; 
+}
+.small-muted { 
+    font-size: .9rem; 
+    color: #6c757d; 
+}
 </style>
 <script>
 const bookedSlots = <?= json_encode($bookedSlots) ?>;
@@ -207,6 +266,11 @@ function toggleSlot(el){
     return;
   }
   
+  if(el.classList.contains('past')) {
+    alert('❌ Slot ini sudah lewat! Tidak bisa booking untuk jam yang sudah lewat.');
+    return;
+  }
+  
   const dur = getDurasiPaket();
   if(dur === 0) {
     alert('⚠️ Silakan pilih paket terlebih dahulu!');
@@ -230,10 +294,14 @@ function toggleSlot(el){
       return;
     }
     
-    // 🔥 CEK APAKAH SEMUA SLOT DALAM RANGE BEBAS
+    // 🔥 CEK APAKAH SEMUA SLOT DALAM RANGE BEBAS (termasuk slot yang sudah lewat)
     for(let i = idx; i < idx + dur && i < slots.length; i++){
       if(slots[i].classList.contains('booked')){
         alert(`❌ Tidak bisa memilih karena slot ${slots[i].textContent.trim()} sudah dibooking.\n\nUntuk paket ${dur} jam, semua slot harus tersedia.`);
+        return;
+      }
+      if(slots[i].classList.contains('past')){
+        alert(`❌ Tidak bisa memilih karena slot ${slots[i].textContent.trim()} sudah lewat.\n\nUntuk paket ${dur} jam, semua slot harus tersedia.`);
         return;
       }
     }
@@ -323,21 +391,51 @@ document.addEventListener('DOMContentLoaded', function(){
   console.log('\n========== INITIALIZATION ==========');
   console.log('Booked Slots from Server:', bookedSlots);
   
-  // 🔥 TANDAI SLOT YANG SUDAH DIBOOKING
+  // 🔥 AMBIL TANGGAL DAN JAM SEKARANG
+  const selectedDate = document.getElementById('tanggal').value;
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const todayStr = now.toISOString().split('T')[0];
+  
+  console.log('Current Time:', currentHour + ':' + currentMinute);
+  console.log('Selected Date:', selectedDate);
+  console.log('Today Date:', todayStr);
+  
+  const isToday = selectedDate === todayStr;
+  
+  // 🔥 TANDAI SLOT YANG SUDAH DIBOOKING DAN YANG SUDAH LEWAT
   let markedCount = 0;
+  let pastCount = 0;
   document.querySelectorAll('.time-slot').forEach(slot => {
     const start = slot.dataset.start;
     const end = slot.dataset.end;
     
+    // Cek apakah slot sudah dibooking
     if(isSlotBooked(start, end)){
       slot.classList.add('booked');
       slot.title = 'Sudah dibooking oleh user lain';
       markedCount++;
       console.log(`✅ Marked as BOOKED: ${start}-${end}`);
     }
+    
+    // 🔥 CEK APAKAH SLOT SUDAH LEWAT (hanya untuk hari ini)
+    if(isToday) {
+      const slotStartHour = parseInt(start.split('.')[0]);
+      const slotStartMinute = parseInt(start.split('.')[1] || '0');
+      
+      // Jika jam slot sudah lewat atau sama dengan jam sekarang tapi menitnya sudah lewat
+      if(slotStartHour < currentHour || (slotStartHour === currentHour && slotStartMinute <= currentMinute)) {
+        slot.classList.add('past');
+        slot.title = 'Slot ini sudah lewat';
+        pastCount++;
+        console.log(`⏰ Marked as PAST: ${start}-${end}`);
+      }
+    }
   });
   
   console.log(`\n📊 Total slots marked as booked: ${markedCount}`);
+  console.log(`⏰ Total slots marked as past: ${pastCount}`);
   console.log('====================================\n');
   
   // Reset jam ketika ganti paket
@@ -345,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function(){
     p.addEventListener('change', () => {
       // Clear selected slots
       document.querySelectorAll('.time-slot').forEach(s => { 
-        if(!s.classList.contains('booked')) {
+        if(!s.classList.contains('booked') && !s.classList.contains('past')) {
           s.classList.remove('active'); 
         }
       });
@@ -367,7 +465,7 @@ document.addEventListener('DOMContentLoaded', function(){
   <div class="card shadow p-4 <?= ($studio=='bronze') ? 'bronze' : (($studio=='gold')? 'gold':'') ?>">
     <?php if($studio=='bronze' || $studio=='gold'): ?>
       <h3>Booking Studio <?= htmlspecialchars(ucfirst($studio)) ?></h3>
-      <p>Pilih jadwal & paket. Slot berwarna abu-abu = sudah dibooking.</p>
+      <p>Pilih jadwal & paket. Slot berwarna abu-abu = sudah dibooking, slot merah muda = sudah lewat.</p>
       
       <form method="post" action="proses_booking.php" onsubmit="return validateForm()">
         <input type="hidden" name="id_user" value="<?= htmlspecialchars($userId) ?>">
@@ -405,7 +503,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
         <div class="mb-3">
           <label class="form-label">Pilih Jam</label><br>
-          <small class="small-muted">⚠️ Slot abu-abu sudah dibooking oleh user lain. Untuk paket multi-jam, semua slot harus tersedia.</small>
+          <small class="small-muted">⚠️ Slot abu-abu sudah dibooking oleh user lain. Slot merah muda sudah lewat. Untuk paket multi-jam, semua slot harus tersedia.</small>
           <?php if($check_date && count($bookedSlots) > 0): ?>
             <br><small class="text-danger">🔴 <strong><?= count($bookedSlots) ?> slot</strong> sudah dibooking untuk tanggal ini</small>
           <?php endif; ?>
@@ -463,6 +561,15 @@ function validateForm() {
   if (!jamBooking) {
     alert('⚠️ Silakan pilih jam booking!');
     return false;
+  }
+  
+  // 🔥 VALIDASI: Cek apakah ada slot yang dipilih adalah slot yang sudah lewat
+  const selectedSlots = document.querySelectorAll('.time-slot.active');
+  for(let slot of selectedSlots) {
+    if(slot.classList.contains('past')) {
+      alert('⚠️ Tidak dapat booking untuk jam yang sudah lewat!\nSilakan pilih jam yang masih tersedia.');
+      return false;
+    }
   }
   
   const durasi = parseInt(document.getElementById('durasi').value);

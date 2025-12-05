@@ -21,6 +21,32 @@ if ($resultUser && $rowUser = $resultUser->fetch_assoc()) {
 }
 $_SESSION['nama_lengkap'] = $namaLengkap;
 
+// ========== PERBAIKAN AUTO-CANCEL ==========
+$checkColumn = $koneksi->query("SHOW COLUMNS FROM booking LIKE 'expired_at'");
+if ($checkColumn && $checkColumn->num_rows > 0) {
+    $currentTime = date('Y-m-d H:i:s');
+    
+    // Langsung update semua booking yang expired dalam satu query
+    $sqlAutoCancel = "UPDATE booking 
+                      SET status = 'dibatalkan' 
+                      WHERE status_pembayaran = 'belum_dibayar' 
+                      AND status = 'menunggu'
+                      AND expired_at IS NOT NULL
+                      AND expired_at < '$currentTime'";
+    
+    $koneksi->query($sqlAutoCancel);
+    $affectedRows = $koneksi->affected_rows;
+    
+    // Tampilkan notifikasi HANYA SEKALI menggunakan URL parameter
+    if ($affectedRows > 0 && !isset($_GET['notif_shown'])) {
+        echo "<script>
+            alert('⚠️ $affectedRows booking Anda telah dibatalkan otomatis karena melewati batas waktu pembayaran (2 jam).');
+            window.location.href='riwayat_reservasi.php?notif_shown=1';
+        </script>";
+        exit;
+    }
+}
+
 // Handle ubah jadwal
 if (isset($_POST['ubah_jadwal'])) {
     $id_order = $_POST['id_order'];
@@ -31,7 +57,7 @@ if (isset($_POST['ubah_jadwal'])) {
 
     if (!empty($tanggal_baru) && !empty($jam_baru) && !empty($studio_baru) && !empty($paket_baru)) {
         
-        // ===== CEK APAKAH KOMBINASI STUDIO + TANGGAL + JAM + PAKET SUDAH ADA (EXACT MATCH) =====
+        // CEK APAKAH KOMBINASI STUDIO + TANGGAL + JAM + PAKET SUDAH ADA (EXACT MATCH)
         $cekExact = $koneksi->prepare("
             SELECT id_order 
             FROM booking 
@@ -47,7 +73,6 @@ if (isset($_POST['ubah_jadwal'])) {
         $cekExact->execute();
         $hasilExact = $cekExact->get_result();
         
-        // JIKA KETIGANYA SAMA PERSIS → TOLAK
         if ($hasilExact && $hasilExact->num_rows > 0) {
             echo "<script>
                 alert('Kombinasi Studio, Jam, dan Paket yang sama sudah dibooking!\\n\\nSilakan ubah salah satu:\\n- Pilih studio berbeda, ATAU\\n- Pilih jam berbeda, ATAU\\n- Pilih paket berbeda');
@@ -56,9 +81,16 @@ if (isset($_POST['ubah_jadwal'])) {
             exit;
         }
         
-        // ===== JIKA AMAN, LAKUKAN UPDATE =====
-        $updateJadwal = $koneksi->prepare("UPDATE booking SET Tanggal = ?, jam_booking = ?, id_studio = ?, paket = ? WHERE id_order = ? AND id_user = ?");
-        $updateJadwal->bind_param("ssssii", $tanggal_baru, $jam_baru, $studio_baru, $paket_baru, $id_order, $id_user);
+        // Reset expired_at saat mengubah jadwal
+        $checkColumn = $koneksi->query("SHOW COLUMNS FROM booking LIKE 'expired_at'");
+        if ($checkColumn && $checkColumn->num_rows > 0) {
+            $expiredAtBaru = date('Y-m-d H:i:s', strtotime('+2 hours'));
+            $updateJadwal = $koneksi->prepare("UPDATE booking SET Tanggal = ?, jam_booking = ?, id_studio = ?, paket = ?, expired_at = ? WHERE id_order = ? AND id_user = ?");
+            $updateJadwal->bind_param("sssssii", $tanggal_baru, $jam_baru, $studio_baru, $paket_baru, $expiredAtBaru, $id_order, $id_user);
+        } else {
+            $updateJadwal = $koneksi->prepare("UPDATE booking SET Tanggal = ?, jam_booking = ?, id_studio = ?, paket = ? WHERE id_order = ? AND id_user = ?");
+            $updateJadwal->bind_param("ssssii", $tanggal_baru, $jam_baru, $studio_baru, $paket_baru, $id_order, $id_user);
+        }
         
         if ($updateJadwal->execute()) {
             $updateJadwal->close();
@@ -75,7 +107,7 @@ if (isset($_POST['ubah_jadwal'])) {
     }
 }
 
-// Aksi batal
+// Aksi batal manual
 if (isset($_GET['batal'])) {
     $id_order = $_GET['batal'];
     
@@ -165,7 +197,6 @@ if (!empty($filterTanggalAwal) && !empty($filterTanggalAkhir)) {
     $types .= "s";
 }
 
-// PERUBAHAN: Urutan berdasarkan id_order DESC (booking terbaru)
 $query .= " ORDER BY id_order DESC LIMIT ?";
 $params[] = (int)$showEntries;
 $types .= "i";
@@ -181,6 +212,7 @@ $result = $stmt->get_result();
     <meta charset="UTF-8">
     <title>Riwayat Reservasi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
@@ -249,7 +281,6 @@ $result = $stmt->get_result();
             border-radius: 5px;
             padding: 5px 10px;
         }
-        /* Style untuk badge paket */
         .paket-badge {
             display: inline-block;
             padding: 8px 15px;
@@ -279,39 +310,44 @@ $result = $stmt->get_result();
             background-color: #ffcc00;
             color: #664d00;
         }
-        #konfirmasiModal .modal-dialog {
-            max-width: 400px;
-        }
-        #konfirmasiModal .modal-content {
-            border-radius: 10px;
-            padding: 20px;
-        }
-        #konfirmasiModal h5 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-        .btn-konfirmasi-ya {
-            background-color: #FFD700;
-            color: #000;
-            font-weight: 600;
-            border: none;
-            padding: 8px 30px;
-            border-radius: 5px;
-        }
-        .btn-konfirmasi-ya:hover {
-            background-color: #f2c200;
-        }
-        .btn-konfirmasi-batal {
-            background-color: #6c757d;
+        /* Timer Countdown Style */
+        .timer-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            font-weight: 600;
-            border: none;
-            padding: 8px 30px;
-            border-radius: 5px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .btn-konfirmasi-batal:hover {
-            background-color: #5a6268;
+        .timer-label {
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .timer-countdown {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+        .timer-warning {
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .timer-warning .timer-countdown {
+            color: #ffeb3b;
+        }
+        .timer-expired {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .timer-expired .timer-countdown {
+            color: #fff;
         }
         /* countdown */
         .countdown {
@@ -388,6 +424,7 @@ $result = $stmt->get_result();
                         <th>Tanggal Booking</th>
                         <th>Jam Booking</th>
                         <th>Total Tagihan</th>
+                        <th>Waktu Upload DP</th>
                         <th>Status Konfirmasi</th>
                         <th>Status Pembayaran</th>
                         <th>Bukti DP</th>
@@ -425,7 +462,6 @@ $result = $stmt->get_result();
                                     echo "<span class='$classStudio'>" . htmlspecialchars($namaStudio) . "</span>";
                                     ?>
                                 </td>
-                                <!-- KOLOM PAKET BARU -->
                                 <td>
                                     <?php
                                     $paket = $row['paket'] ?? '';
@@ -434,6 +470,8 @@ $result = $stmt->get_result();
                                     
                                     if (empty($paket) || $paket === '-' || $paket === 'without' || $paket === 'null') {
                                         $paketText = '<span class="text-muted">Tidak ada info paket</span>';
+                                    }
+                                    elseif (stripos($namaStudio, 'bronze') !== false) {
                                     } elseif (stripos($namaStudio, 'bronze') !== false) {
                                         if (stripos($paket, 'tanpa') !== false || stripos($paket, 'without') !== false || stripos($paket, '35') !== false) {
                                             $classPaket .= ' paket-bronze-tanpa';
@@ -444,6 +482,8 @@ $result = $stmt->get_result();
                                         } else {
                                             $paketText = htmlspecialchars($paket);
                                         }
+                                    }
+                                    elseif (stripos($namaStudio, 'gold') !== false) {
                                     } elseif (stripos($namaStudio, 'gold') !== false) {
                                         if (stripos($paket, 'reguler') !== false || stripos($paket, 'regular') !== false || stripos($paket, '50') !== false) {
                                             $classPaket .= ' paket-gold-reguler';
@@ -457,6 +497,8 @@ $result = $stmt->get_result();
                                         } else {
                                             $paketText = htmlspecialchars($paket);
                                         }
+                                    }
+                                    else {
                                     } else {
                                         $paketText = htmlspecialchars($paket);
                                     }
@@ -471,6 +513,53 @@ $result = $stmt->get_result();
                                 <td><?= htmlspecialchars($row['Tanggal']) ?></td>
                                 <td><?= htmlspecialchars($row['jam_booking']) ?></td>
                                 <td>Rp <?= number_format($row['total_tagihan'], 0, ',', '.') ?></td>
+                                
+                                <!-- KOLOM COUNTDOWN TIMER -->
+                                <td>
+                                    <?php 
+                                    // Cek apakah kolom expired_at ada
+                                    $checkColumn = $koneksi->query("SHOW COLUMNS FROM booking LIKE 'expired_at'");
+                                    $hasExpiredAt = ($checkColumn && $checkColumn->num_rows > 0);
+                                    
+                                    // Hanya tampilkan timer jika status belum dibayar dan belum dibatalkan
+                                    if ($row['status_pembayaran'] === 'belum_dibayar' && $row['status'] === 'menunggu') {
+                                        if ($hasExpiredAt && !empty($row['expired_at'])) {
+                                            $expiredAt = strtotime($row['expired_at']);
+                                            $sisaWaktu = $expiredAt - time();
+                                            
+                                            if ($sisaWaktu > 0) {
+                                                // Hitung jam, menit, detik untuk tampilan awal
+                                                $hours = floor($sisaWaktu / 3600);
+                                                $minutes = floor(($sisaWaktu % 3600) / 60);
+                                                $seconds = $sisaWaktu % 60;
+                                                $formatted = sprintf("%02d:%02d:%02d", $hours, $minutes, $seconds);
+                                                
+                                                echo "<div class='timer-container' data-waktu-expire='$expiredAt' data-id-order='{$row['id_order']}'>";
+                                                echo "<div class='timer-label'><i class='bi bi-clock-history'></i> Booking Akan Expire Dalam:</div>";
+                                                echo "<div class='timer-countdown'>$formatted</div>";
+                                                echo "<small style='font-size: 0.7rem; opacity: 0.9;'>Segera upload DP untuk mengamankan booking Anda!</small>";
+                                                echo "</div>";
+                                            } else {
+                                                echo "<div class='timer-container timer-expired'>";
+                                                echo "<div class='timer-label'><i class='bi bi-x-circle'></i> Waktu Habis</div>";
+                                                echo "<div class='timer-countdown'>EXPIRED</div>";
+                                                echo "<small style='font-size: 0.7rem; opacity: 0.9;'>Booking otomatis dibatalkan</small>";
+                                                echo "</div>";
+                                            }
+                                        } else {
+                                            // Jika kolom tidak ada, tampilkan pesan untuk segera upload
+                                            echo "<div class='alert alert-warning p-2 m-0' style='font-size: 0.85rem;'>";
+                                            echo "<i class='bi bi-exclamation-triangle'></i> Segera upload DP!";
+                                            echo "</div>";
+                                        }
+                                    } elseif ($row['status'] === 'dibatalkan') {
+                                        echo "<span class='text-muted'>-</span>";
+                                    } else {
+                                        echo "<span class='text-muted'>-</span>";
+                                    }
+                                    ?>
+                                </td>
+                                
                                 <td>
                                     <?php
                                     if ($row['status'] === 'menunggu') {
@@ -524,27 +613,54 @@ $result = $stmt->get_result();
                                 </td>
                                                 
                                 <td>
-                                    <?php if ($row['status'] !== 'dibatalkan'): ?>
-                                        <button class="btn btn-blue btn-sm mb-1" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#ubahModal" 
-                                                data-id="<?= $row['id_order'] ?>"
-                                                data-tanggal="<?= $row['Tanggal'] ?>"
-                                                data-jam="<?= $row['jam_booking'] ?>"
-                                                data-studio="<?= $row['id_studio'] ?>"
-                                                data-paket="<?= htmlspecialchars($row['paket'] ?? '') ?>">
-                                            Ubah Jadwal
-                                        </button><br>
-                                        <a href="?batal=<?= $row['id_order'] ?>" onclick="return confirm('Batalkan pesanan ini?')" class="btn btn-red btn-sm">Batalkan</a>
-                                    <?php else: ?>
+                                    <?php if ($row['status_pembayaran'] === 'belum_dibayar' && $row['status'] !== 'dibatalkan'): ?>
+                                        <div>
+                                            <span class="text-muted d-block mb-2">Belum upload</span>
+                                            <a href="ketentuan.php?id_order=<?= $row['id_order'] ?>" class="btn btn-sm" style="background-color: #FFD700; color: #000; font-weight: 600; border: none;">
+                                                <i class="bi bi-cloud-upload"></i> Upload DP
+                                            </a>
+                                        </div>
+                                    <?php elseif (!empty($row['bukti_dp'])): ?>
+                                        <a href="uploads/bukti_dp/<?= urlencode($row['bukti_dp']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-file-earmark-image"></i> Lihat
+                                        </a>
+                                    <?php elseif ($row['status'] === 'dibatalkan'): ?>
                                         <span class="text-muted">-</span>
+                                    <?php else: ?>
+                                        <span class="text-muted">Belum upload</span>
                                     <?php endif; ?>
                                 </td>
+                                
+                                <td>
+    <?php if ($row['status'] !== 'dibatalkan'): ?>
+        <button class="btn btn-blue btn-sm mb-1" 
+                data-bs-toggle="modal" 
+                data-bs-target="#ubahModal" 
+                data-id="<?= $row['id_order'] ?>"
+                data-tanggal="<?= $row['Tanggal'] ?>"
+                data-jam="<?= $row['jam_booking'] ?>"
+                data-studio="<?= $row['id_studio'] ?>"
+                data-paket="<?= htmlspecialchars($row['paket'] ?? '') ?>">
+            Ubah Jadwal
+        </button><br>
+        
+        <?php if ($row['status_pembayaran'] !== 'lunas'): ?>
+            <a href="?batal=<?= $row['id_order'] ?>" 
+               onclick="return confirm('Batalkan pesanan ini?')" 
+               class="btn btn-red btn-sm">
+                Batalkan
+            </a>
+        <?php endif; ?>
+    <?php else: ?>
+        <span class="text-muted">-</span>
+    <?php endif; ?>
+</td>
+
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="11" class="text-muted">Belum ada reservasi ditemukan.</td>
+                            <td colspan="12" class="text-muted">Belum ada reservasi ditemukan.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -719,17 +835,113 @@ document.getElementById('btnSimpanPerubahan').addEventListener('click', function
         return;
     }
     
-    // Tampilkan modal konfirmasi
     const konfirmasiModal = new bootstrap.Modal(document.getElementById('konfirmasiModal'));
     konfirmasiModal.show();
 });
 
-// Handle tombol Iya pada modal konfirmasi
 document.getElementById('konfirmasiYa').addEventListener('click', function() {
-    // Submit form
     document.getElementById('formUbahJadwal').submit();
 });
 
+// ============= COUNTDOWN TIMER LOGIC =============
+// ============= IMPROVED COUNTDOWN TIMER WITH ALERT =============
+let expiredNotified = false; // Flag untuk memastikan alert hanya muncul sekali
+
+function updateTimers() {
+    const timerContainers = document.querySelectorAll('.timer-container:not(.timer-expired)');
+    let hasNewExpired = false;
+    
+    timerContainers.forEach(container => {
+        const expireTime = parseInt(container.getAttribute('data-waktu-expire'));
+        const idOrder = container.getAttribute('data-id-order');
+        const now = Math.floor(Date.now() / 1000);
+        const timeLeft = expireTime - now;
+        
+        if (timeLeft <= 0) {
+            hasNewExpired = true;
+            
+            // Tandai sebagai expired
+            container.classList.add('timer-expired');
+            container.querySelector('.timer-label').innerHTML = '<i class="bi bi-x-circle"></i> Waktu Habis';
+            container.querySelector('.timer-countdown').textContent = 'EXPIRED';
+            
+            const small = container.querySelector('small');
+            if (small) {
+                small.textContent = 'Memproses pembatalan...';
+            }
+            return;
+        }
+        
+        // Hitung jam, menit, detik
+        const hours = Math.floor(timeLeft / 3600);
+        const minutes = Math.floor((timeLeft % 3600) / 60);
+        const seconds = timeLeft % 60;
+        
+        // Format dengan leading zero
+        const formatted = 
+            String(hours).padStart(2, '0') + ':' + 
+            String(minutes).padStart(2, '0') + ':' + 
+            String(seconds).padStart(2, '0');
+        
+        container.querySelector('.timer-countdown').textContent = formatted;
+        
+        // Tambah warning animation jika kurang dari 30 menit
+        if (timeLeft < 1800) {
+            container.classList.add('timer-warning');
+        }
+        
+        // Ubah background menjadi merah jika kurang dari 10 menit
+        if (timeLeft < 600) {
+            container.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+        }
+    });
+    
+    // Jika ada yang baru expired DAN belum pernah muncul notifikasi
+    if (hasNewExpired && !expiredNotified) {
+        expiredNotified = true; // Set flag agar tidak muncul lagi
+        
+        // Tampilkan alert
+        alert('⚠️ Waktu pembayaran DP Anda telah habis!\n\nBooking Anda akan dibatalkan secara otomatis.');
+        
+        // Setelah klik OK, redirect untuk trigger auto-cancel di PHP
+        window.location.href = 'riwayat_reservasi.php';
+    }
+}
+
+// Update timer setiap detik
+const timerInterval = setInterval(updateTimers, 1000);
+updateTimers();
+
+// Background check setiap 30 detik untuk sinkronisasi dengan server
+setInterval(() => {
+    // Cek apakah ada timer yang expired
+    const expiredTimers = document.querySelectorAll('.timer-expired');
+    
+    if (expiredTimers.length > 0 && !expiredNotified) {
+        expiredNotified = true;
+        clearInterval(timerInterval); // Stop timer interval
+        
+        alert('⚠️ Waktu pembayaran DP Anda telah habis!\n\nBooking Anda akan dibatalkan secara otomatis.');
+        window.location.href = 'riwayat_reservasi.php';
+    }
+}, 30000);
+
+// Update timer setiap detik
+setInterval(updateTimers, 1000);
+// Update segera saat halaman load
+updateTimers();
+
+// Cek status expired setiap 30 detik (untuk memastikan sinkronisasi dengan server)
+setInterval(() => {
+    const expiredTimers = document.querySelectorAll('.timer-expired');
+    if (expiredTimers.length > 0) {
+        // Jika ada timer yang expired, reload untuk update dari server
+        window.location.reload();
+    }
+}, 30000); // 30 detik
+</script>
+</body>
+</html
 /* ===== TIMER COUNTDOWN PER ROW ===== */
 /* sinkronisasi server time untuk mengurangi drift */
 const serverNowMs = <?= time() * 1000 ?>;
