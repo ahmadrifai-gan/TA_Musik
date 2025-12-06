@@ -106,10 +106,6 @@ if (!$result_ulasan) {
               <a class="btn btn-outline-warning btn-lg rounded-pill" href="#studios">Lihat Studio & Jadwal</a>
             </div>
             <ul class="list-inline text-secondary mb-0">
-              <li class="list-inline-item">24/7</li>
-              <li class="list-inline-item">Pro Gear</li>
-              <li class="list-inline-item">Engineer On-site</li>
-              <li class="list-inline-item">Free Wi-Fi</li>
             </ul>
           </div>
           <div class="col-lg-5">
@@ -128,7 +124,7 @@ if (!$result_ulasan) {
                   <small class="text-white-50">Kepuasan</small>
                 </div>
                 <div class="bg-dark bg-opacity-75 text-white rounded-3 p-2">
-                  <div class="fw-bold">6</div>
+                  <div class="fw-bold">2</div>
                   <small class="text-white-50">Ruang</small>
                 </div>
               </div>
