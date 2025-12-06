@@ -11,59 +11,59 @@ require "../config/koneksi.php";
 if (isset($_POST['hapus'])) {
   $id = $_POST['hapus_id'];
   $current_page = isset($_GET['page']) ? '?page=' . (int)$_GET['page'] : '';
-  mysqli_query($koneksi, "DELETE FROM booking WHERE id_order = '$id'");
-  echo "<script>alert('Data berhasil dihapus!'); window.location='order.php$current_page';</script>";
+  mysqli_query($koneksi, "DELETE FROM booking_offline WHERE id_offline = '$id'");
+  echo "<script>alert('Data berhasil dihapus!'); window.location='order_offline.php$current_page';</script>";
   exit;
 }
 
 // ---------------------- PROSES TAMBAH ----------------------
-if (isset($_POST['simpan'])) {
-  $nama_pelanggan = mysqli_real_escape_string($koneksi, $_POST['nama_pelanggan']);
-  $id_studio = $_POST['id_studio'];
-  $tanggal = $_POST['tanggal'];
-  $jam_booking = $_POST['jam_booking'];
-  $total_tagihan = $_POST['total_tagihan'];
-  $status = $_POST['status'];
-  $status_pembayaran = $_POST['status_pembayaran'];
+// if (isset($_POST['simpan'])) {
+//   $nama_lengkap = mysqli_real_escape_string($koneksi, $_POST['nama_lengkap']);
+//   $id_studio = $_POST['id_studio'];
+//   $tanggal = $_POST['tanggal'];
+//   $jam_booking = $_POST['jam_booking'];
+//   $total_tagihan = $_POST['total_tagihan'];
+//   $status = $_POST['status'];
+//   $status_pembayaran = $_POST['status_pembayaran'];
 
-  // cek user, kalau belum ada tambahkan ke tabel user
-  $cekUser = mysqli_query($koneksi, "SELECT id_user FROM user WHERE nama_lengkap='$nama_pelanggan' LIMIT 1");
-  if (mysqli_num_rows($cekUser) > 0) {
-    $id_user = mysqli_fetch_assoc($cekUser)['id_user'];
-  } else {
-    mysqli_query($koneksi, "INSERT INTO user (username, nama_lengkap, email, role, password, whatsapp) 
-                            VALUES ('$nama_pelanggan', '$nama_pelanggan', '', 'user', '', '')");
-    $id_user = mysqli_insert_id($koneksi);
-  }
+//   // cek user, kalau belum ada tambahkan ke tabel user
+//   $cekUser = mysqli_query($koneksi, "SELECT id_user FROM user WHERE nama_lengkap='$nama_lengkap' LIMIT 1");
+//   if (mysqli_num_rows($cekUser) > 0) {
+//     $id_user = mysqli_fetch_assoc($cekUser)['id_user'];
+//   } else {
+//     mysqli_query($koneksi, "INSERT INTO user (username, nama_lengkap, email, role, password, whatsapp) 
+//                             VALUES ('$nama_lengkap', '$nama_lengkap', '', 'user', '', '')");
+//     $id_user = mysqli_insert_id($koneksi);
+//   }
 
-  mysqli_query($koneksi, "
-    INSERT INTO booking (id_user, id_studio, total_tagihan, status, status_pembayaran, Tanggal, jam_booking)
-    VALUES ('$id_user', '$id_studio', '$total_tagihan', '$status', '$status_pembayaran', '$tanggal', '$jam_booking')
-  ");
-  $total_after_insert = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) as total FROM booking"))['total'];
-  $last_page = ceil($total_after_insert / 10);
-  echo "<script>alert('Order baru berhasil ditambahkan!'); window.location='order.php?page=$last_page';</script>";
-  exit;
-}
+//   mysqli_query($koneksi, "
+//     INSERT INTO booking_offline (id_user, id_studio, total_tagihan, status, status_pembayaran, Tanggal, jam_booking)
+//     VALUES ('$id_user', '$id_studio', '$total_tagihan', '$status', '$status_pembayaran', '$tanggal', '$jam_booking')
+//   ");
+//   $total_after_insert = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) as total FROM booking_offline"))['total'];
+//   $last_page = ceil($total_after_insert / 10);
+//   echo "<script>alert('Order baru berhasil ditambahkan!'); window.location='order.php?page=$last_page';</script>";
+//   exit;
+// }
 
 // ---------------------- PROSES UPDATE STATUS ----------------------
 if (isset($_POST['update_status'])) {
-  $id_order = $_POST['status_id'];
+  $id_offline = $_POST['status_id'];
   $status = $_POST['status_value'];
   $status_pembayaran = $_POST['pembayaran_value'];
   
-  $updateQuery = "UPDATE booking 
+  $updateQuery = "UPDATE booking_offline 
     SET status = '$status', 
         status_pembayaran = '$status_pembayaran'
-    WHERE id_order = '$id_order'";
+    WHERE id_offline = '$id_offline'";
   
   $result = mysqli_query($koneksi, $updateQuery);
   
   if ($result) {
-    echo "<script>alert('✅ Status berhasil diupdate!'); window.location='order.php';</script>";
+    echo "<script>alert('✅ Status berhasil diupdate!'); window.location='order_offline.php';</script>";
   } else {
     $error = mysqli_error($koneksi);
-    echo "<script>alert('❌ Error: $error'); window.location='order.php';</script>";
+    echo "<script>alert('❌ Error: $error'); window.location='order_offline.php';</script>";
   }
   exit;
 }
@@ -358,7 +358,10 @@ if (isset($_POST['update_status'])) {
   <div class="container-fluid">
 
     <div class="page-header">
-    <h4>Manajemen Order Online</h4>\
+    <h4>Manajemen Order Offline</h4>
+    <a href="tambah_booking.php" class="btn btn-add">
+        <i class="fa fa-plus"></i> Tambah Order
+    </a>
 </div>
     <div class="card">
       <div class="table-wrapper">
@@ -385,8 +388,7 @@ if (isset($_POST['update_status'])) {
               // Get total records first
               $count_query = "
                 SELECT COUNT(*) as total
-                FROM booking b
-                JOIN user u ON b.id_user = u.id_user
+                FROM booking_offline b
                 JOIN studio s ON b.id_studio = s.id_studio
               ";
               $count_result = mysqli_query($koneksi, $count_query);
@@ -397,7 +399,7 @@ if (isset($_POST['update_status'])) {
               $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
               if ($page < 1) $page = 1;
               if ($page > $total_pages && $total_pages > 0) {
-                header("Location: order.php?page=" . $total_pages);
+                header("Location: order_offline.php?page=" . $total_pages);
                 exit;
               }
               
@@ -406,32 +408,35 @@ if (isset($_POST['update_status'])) {
               // Query dengan pagination
               $query = "
                 SELECT 
-                  b.id_order,
+                  b.id_offline,
                   b.id_studio,
-                  u.nama_lengkap AS nama_user,
+                  b.nama_lengkap,
                   s.nama AS nama_studio,
-                  b.Tanggal,
+                  b.tanggal,
                   b.jam_booking,
                   b.total_tagihan,
                   b.status,
-                  b.status_pembayaran,
-                  b.bukti_dp
-                FROM booking b
-                JOIN user u ON b.id_user = u.id_user
+                  b.status_pembayaran
+                FROM booking_offline b
                 JOIN studio s ON b.id_studio = s.id_studio
-                ORDER BY b.id_order DESC
+                ORDER BY b.id_offline DESC
                 LIMIT $per_page OFFSET $offset
               ";
                $result = mysqli_query($koneksi, $query);
-              $no = 1;
-              if (mysqli_num_rows($result) > 0):
-                while ($row = mysqli_fetch_assoc($result)):
-                  // Format tanggal
-                  $tanggal = date('Y-m-d', strtotime($row['Tanggal']));
+              
+              // Check for query errors
+              if (!$result) {
+                echo "<tr><td colspan='9' class='no-data'>Error: " . mysqli_error($koneksi) . "</td></tr>";
+              } else {
+                $no = ($offset + 1);
+                if (mysqli_num_rows($result) > 0):
+                  while ($row = mysqli_fetch_assoc($result)):
+                    // Format tanggal
+                    $tanggal = isset($row['tanggal']) ? date('Y-m-d', strtotime($row['tanggal'])) : '';
               ?>
               <tr>
                 <td><?= $no++ ?></td>
-                <td><?= htmlspecialchars($row['nama_user']) ?></td>
+                <td><?= htmlspecialchars($row['nama_lengkap']) ?></td>
                 <td><?= htmlspecialchars($row['nama_studio']) ?></td>
                 <td><?= $tanggal ?></td>
                 <td><?= htmlspecialchars($row['jam_booking']) ?></td>
@@ -448,40 +453,42 @@ if (isset($_POST['update_status'])) {
                 <td>
                   <?php if ($row['status_pembayaran'] == 'lunas'): ?>
                     <span class="badge badge-success">Lunas</span>
-                  <?php elseif ($row['status_pembayaran'] == 'dp_dibayar'): ?>
-                    <span class="badge badge-info">DP Dibayar</span>
                   <?php else: ?>
                     <span class="badge badge-secondary">Belum Dibayar</span>
                   <?php endif; ?>
                 </td>
                 <td>
                   <button type="button" class="btn btn-lihat btn-action lihatBtn"
-                    data-nama="<?= htmlspecialchars($row['nama_user']) ?>"
+                    data-nama="<?= htmlspecialchars($row['nama_lengkap']) ?>"
                     data-studio="<?= htmlspecialchars($row['nama_studio']) ?>"
                     data-tanggal="<?= $tanggal ?>"
                     data-jam="<?= htmlspecialchars($row['jam_booking']) ?>"
                     data-total="<?= htmlspecialchars($row['total_tagihan']) ?>"
                     data-status="<?= htmlspecialchars($row['status']) ?>"
-                    data-pembayaran="<?= htmlspecialchars($row['status_pembayaran']) ?>"
-                    data-bukti-dp="<?= htmlspecialchars($row['bukti_dp'] ?? '') ?>">
+                    data-pembayaran="<?= htmlspecialchars($row['status_pembayaran']) ?>">
                     <i class="fa fa-eye"></i> Lihat
                   </button>
 
                   <button type="button" class="btn btn-status btn-action statusBtn"
-                    data-id="<?= $row['id_order'] ?>"
+                    data-id="<?= $row['id_offline'] ?>"
                     data-status="<?= htmlspecialchars($row['status']) ?>"
                     data-pembayaran="<?= htmlspecialchars($row['status_pembayaran']) ?>">
                     <i class="fa fa-check-circle"></i> Status
                   </button>
 
-                  <button type="button" class="btn btn-hapus btn-action hapusBtn" data-id="<?= $row['id_order'] ?>">
+                  <button type="button" class="btn btn-hapus btn-action hapusBtn" data-id="<?= $row['id_offline'] ?>">
                     <i class="fa fa-trash"></i> Hapus
                   </button>
                 </td>
               </tr>
-              <?php endwhile; else: ?>
-                <tr><td colspan="9" class="no-data">Belum ada data booking</td></tr>
-              <?php endif; ?>
+              <?php 
+                  endwhile; 
+                else: ?>
+                <tr><td colspan="9" class="no-data">Belum ada data booking_offline</td></tr>
+              <?php 
+                endif;
+              }
+              ?>
             </tbody>
           </table>
         </div>
@@ -574,7 +581,7 @@ if (isset($_POST['update_status'])) {
         <div class="modal-body">
           <div class="form-group">
             <label>Nama Pelanggan</label>
-            <input type="text" name="nama_pelanggan" class="form-control" required>
+            <input type="text" name="nama_lengkap" class="form-control" required>
           </div>
           <div class="form-group">
             <label>Studio</label>
@@ -611,8 +618,7 @@ if (isset($_POST['update_status'])) {
           <div class="form-group">
             <label>Status Pembayaran</label>
             <select name="status_pembayaran" class="form-control">
-              <option value="belum_dibayar">Belum Dibayar</option>
-              <option value="dp_dibayar">DP Dibayar</option>
+              <option value="belum dibayar">Belum Dibayar</option>
               <option value="lunas">Lunas</option>
             </select>
           </div>
@@ -653,8 +659,7 @@ if (isset($_POST['update_status'])) {
           <div class="form-group">
             <label><strong>Status Pembayaran</strong></label>
             <select name="pembayaran_value" id="pembayaran_value" class="form-control" required>
-              <option value="belum_dibayar">Belum Dibayar</option>
-              <option value="dp_dibayar">DP Dibayar</option>
+              <option value="belum dibayar">Belum Dibayar</option>
               <option value="lunas">Lunas</option>
             </select>
             <small class="form-text text-muted">
@@ -689,7 +694,6 @@ if (isset($_POST['update_status'])) {
         <p><strong>Total Tagihan:</strong> Rp <span id="detailTotal"></span></p>
         <p><strong>Status:</strong> <span id="detailStatus"></span></p>
         <p><strong>Status Pembayaran:</strong> <span id="detailPembayaran"></span></p>
-        <div id="detailBuktiDp" style="margin-top: 15px;"></div>
       </div>
     </div>
   </div>
@@ -731,39 +735,12 @@ $(document).ready(function(){
     
     let pembayaran = $(this).data('pembayaran');
     if(pembayaran === 'lunas') $('#detailPembayaran').html('<span class="badge badge-success">Lunas</span>');
-    else if(pembayaran === 'dp_dibayar') $('#detailPembayaran').html('<span class="badge badge-info">DP Dibayar</span>');
     else $('#detailPembayaran').html('<span class="badge badge-secondary">Belum Dibayar</span>');
 
     let st = $(this).data('status');
     if(st === 'terkonfirmasi') $('#detailStatus').html('<span class="badge badge-success">Terkonfirmasi</span>');
     else if(st === 'dibatalkan') $('#detailStatus').html('<span class="badge badge-danger">Dibatalkan</span>');
     else $('#detailStatus').html('<span class="badge badge-warning">Menunggu</span>');
-
-    // Tampilkan bukti DP jika ada
-    let buktiDp = $(this).data('bukti-dp');
-    let buktiHtml = '';
-    if (buktiDp && buktiDp.trim() !== '') {
-      let fileExt = buktiDp.split('.').pop().toLowerCase();
-      let filePath = '../uploads/bukti_dp/' + buktiDp;
-
-      buktiHtml = '<hr><p><strong>Bukti DP:</strong></p>';
-
-      if (['jpg', 'jpeg', 'png', 'gif', 'png', 'webp'].includes(fileExt)) {
-        buktiHtml += '<div class="mt-2 mb-2">';
-        buktiHtml += '<img src="' + filePath + '" alt="Bukti DP" class="img-fluid" style="max-width: 100%; max-height: 350px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">';
-        buktiHtml += '</div>';
-      } else {
-        buktiHtml += '<div class="alert alert-info py-2 mb-2">File bukti DP terupload (format non-gambar).</div>';
-      }
-
-      buktiHtml += '<a href="' + filePath + '" target="_blank" class="btn btn-sm btn-outline-primary">';
-      buktiHtml += '<i class="fa fa-external-link"></i> Lihat File Lengkap';
-      buktiHtml += '</a>';
-    } else {
-      buktiHtml = '<hr><p><strong>Bukti DP:</strong> <span class="text-muted">Belum ada bukti DP</span></p>';
-    }
-
-    $('#detailBuktiDp').html(buktiHtml);
 
     $('#modalDetail').modal('show');
   });
