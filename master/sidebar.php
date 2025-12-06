@@ -23,10 +23,26 @@ $current_page = basename($_SERVER['PHP_SELF']);
       <i class="fa-solid fa-table-columns"></i>
       <span class="menu-text">Dashboard</span>
     </a>
-    <a href="../admin/order.php" class="<?= ($current_page == 'order.php') ? 'active' : '' ?>">
-      <i class="fa-solid fa-cart-shopping"></i>
-      <span class="menu-text">Order</span>
-    </a>
+    
+    <!-- Menu Order dengan Submenu -->
+    <div class="menu-item has-submenu">
+      <a href="#" class="menu-link <?= (in_array($current_page, ['order.php', 'order-offline.php', 'order-online.php'])) ? 'active' : '' ?>">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <span class="menu-text">Order</span>
+        <i class="fa-solid fa-chevron-down submenu-arrow"></i>
+      </a>
+      <div class="submenu">
+        <a href="../admin/order.php" class="submenu-link <?= ($current_page == 'order.php') ? 'active' : '' ?>">
+          <i class="fa-solid fa-globe"></i>
+          <span class="menu-text">Online</span>
+        </a>
+        <a href="../admin/order_offline.php" class="submenu-link <?= ($current_page == 'order_offline.php') ? 'active' : '' ?>">
+          <i class="fa-solid fa-store"></i>
+          <span class="menu-text">Offline</span>
+        </a>
+      </div>
+    </div>
+    
     <a href="../admin/studio.php" class="<?= ($current_page == 'studio.php') ? 'active' : '' ?>">
       <i class="fa-solid fa-music"></i>
       <span class="menu-text">Studio</span>
@@ -214,30 +230,137 @@ $current_page = basename($_SERVER['PHP_SELF']);
     overflow: hidden;
   }
 
+  /* Styling untuk menu dengan submenu */
+  .menu-item {
+    position: relative;
+    margin-bottom: 8px;
+  }
+
+  .menu-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #ffffff;
+    padding: 12px 15px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-size: 15px;
+    font-weight: 400;
+    justify-content: space-between;
+  }
+
+  .submenu-arrow {
+    font-size: 12px;
+    margin-left: auto;
+    transition: transform 0.3s ease;
+  }
+
+  .menu-item.active .submenu-arrow {
+    transform: rotate(180deg);
+  }
+
+  .menu-item.has-submenu:hover .submenu-arrow {
+    transform: rotate(180deg);
+  }
+
+  /* Submenu styling */
+  .submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    margin-left: 20px;
+  }
+
+  .menu-item.active .submenu,
+  .menu-item:hover .submenu {
+    max-height: 200px;
+  }
+
+  .submenu-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #b0b3b8;
+    padding: 10px 15px;
+    margin-bottom: 5px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .submenu-link i {
+    font-size: 14px;
+    margin-right: 12px;
+    width: 20px;
+    text-align: center;
+  }
+
+  .submenu-link:hover {
+    background-color: rgba(255, 215, 0, 0.1);
+    color: #ffd700;
+    transform: translateX(5px);
+  }
+
+  .submenu-link.active {
+    background-color: rgba(255, 215, 0, 0.2);
+    color: #ffd700;
+    font-weight: 500;
+  }
+
+  /* Sidebar collapsed state untuk submenu */
+  .sidebar.collapsed .submenu {
+    display: none;
+  }
+
+  .sidebar.collapsed .menu-item:hover .submenu {
+    display: block;
+    position: absolute;
+    left: 70px;
+    top: 0;
+    background-color: #0D1321;
+    min-width: 180px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    max-height: 200px;
+    z-index: 1000;
+    margin-left: 0;
+  }
+
+  .sidebar.collapsed .submenu-link {
+    margin: 5px;
+    padding: 10px 15px;
+  }
+
   /* Active & Hover States */
-  .menu a.active {
+  .menu a.active,
+  .menu-link.active {
     background-color: #ffd700;
     color: #000000;
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
   }
 
-  .menu a:hover {
+  .menu a:hover:not(.submenu-link),
+  .menu-link:hover {
     background-color: #ffd700;
     color: #000000;
     transform: translateX(5px);
   }
 
-  .sidebar.collapsed .menu a:hover {
+  .sidebar.collapsed .menu a:hover:not(.submenu-link),
+  .sidebar.collapsed .menu-link:hover {
     transform: translateX(0);
   }
 
   /* Tooltip untuk collapsed state */
-  .sidebar.collapsed .menu a {
+  .sidebar.collapsed .menu a,
+  .sidebar.collapsed .menu-link {
     position: relative;
   }
 
-  .sidebar.collapsed .menu a::after {
+  .sidebar.collapsed .menu a::after,
+  .sidebar.collapsed .menu-link::after {
     content: attr(data-tooltip);
     position: absolute;
     left: 70px;
@@ -254,7 +377,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
     z-index: 1000;
   }
 
-  .sidebar.collapsed .menu a:hover::after {
+  .sidebar.collapsed .menu a:hover::after,
+  .sidebar.collapsed .menu-link:hover::after {
     opacity: 1;
   }
 
@@ -263,6 +387,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
     .sidebar:not(.collapsed) {
       width: 250px;
     }
+    
+    .sidebar.collapsed .menu-item:hover .submenu {
+      left: 80px;
+    }
   }
 </style>
 
@@ -270,18 +398,68 @@ $current_page = basename($_SERVER['PHP_SELF']);
   document.addEventListener("DOMContentLoaded", function() {
     const sidebar = document.getElementById("sidebar");
     const toggleBtn = document.getElementById("hamburger");
-
+    
     // Tambahkan data-tooltip untuk setiap menu item
-    const menuItems = document.querySelectorAll('.menu a');
+    const menuItems = document.querySelectorAll('.menu a, .menu-link');
     menuItems.forEach(item => {
-      const text = item.querySelector('.menu-text').textContent;
-      item.setAttribute('data-tooltip', text);
+      const textElement = item.querySelector('.menu-text');
+      if (textElement) {
+        const text = textElement.textContent;
+        item.setAttribute('data-tooltip', text);
+      }
     });
-
+    
+    // Toggle submenu ketika diklik
+    const menuLinks = document.querySelectorAll('.menu-link');
+    menuLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+        if (this.parentElement.classList.contains('has-submenu')) {
+          e.preventDefault();
+          const menuItem = this.parentElement;
+          
+          // Tutup submenu lainnya
+          document.querySelectorAll('.menu-item').forEach(item => {
+            if (item !== menuItem) {
+              item.classList.remove('active');
+            }
+          });
+          
+          // Toggle submenu yang diklik
+          menuItem.classList.toggle('active');
+        }
+      });
+    });
+    
+    // Tutup submenu ketika klik di luar
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.menu-item')) {
+        document.querySelectorAll('.menu-item').forEach(item => {
+          item.classList.remove('active');
+        });
+      }
+    });
+    
     if (toggleBtn) {
       toggleBtn.addEventListener("click", function() {
         sidebar.classList.toggle("collapsed");
+        // Tutup semua submenu ketika sidebar collapsed
+        if (sidebar.classList.contains('collapsed')) {
+          document.querySelectorAll('.menu-item').forEach(item => {
+            item.classList.remove('active');
+          });
+        }
       });
+    }
+    
+    // Auto aktifkan menu item jika salah satu submenu aktif
+    const currentPage = '<?= $current_page ?>';
+    const orderPages = ['order.php', 'order-offline.php', 'order-online.php'];
+    
+    if (orderPages.includes(currentPage)) {
+      const orderMenuItem = document.querySelector('.menu-item.has-submenu');
+      if (orderMenuItem) {
+        orderMenuItem.classList.add('active');
+      }
     }
   });
 </script>

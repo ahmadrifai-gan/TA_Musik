@@ -1,14 +1,17 @@
 <?php
-// admin/tambah_booking.php (FULL - diperbaiki)
-session_start();
+// admin/tambah_booking.php
+require "../master/header.php";
+require "../master/navbar.php";
+require "../master/sidebar.php";
 require "../config/koneksi.php";
 
-// ---------- cek koneksi ----------
-if ($koneksi->connect_errno) {
-    die("Koneksi database gagal: " . $koneksi->connect_error);
+// Cek login sederhana (sesuaikan dengan session Anda)
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../login.php");
+    exit();
 }
 
-// default paket (jika session tidak punya)
+// Default paket
 $paketOptions = [
     ['value' => 'paket-bronze', 'label' => 'Paket Bronze', 'price' => 500000],
     ['value' => 'paket-silver', 'label' => 'Paket Silver', 'price' => 1000000],
@@ -16,820 +19,988 @@ $paketOptions = [
     ['value' => 'paket-platinum', 'label' => 'Paket Platinum', 'price' => 3500000]
 ];
 
-// ---------- ambil tanggal tersedia dari session atau DB ----------
-$tanggalTersedia = $_SESSION['booking_data']['tanggalTersedia'] ?? [];
-if (!is_array($tanggalTersedia) || empty($tanggalTersedia)) {
-    $tq = $koneksi->query("SELECT DISTINCT tanggal FROM jadwal WHERE status = 'Belum Dibooking' ORDER BY tanggal");
-    $tanggalTersedia = [];
-    if ($tq) {
-        while ($r = $tq->fetch_assoc()) {
-            $tanggalTersedia[] = $r['tanggal'];
-        }
+// Ambil tanggal tersedia dari DB
+$tanggalTersedia = [];
+$tq = $koneksi->query("SELECT DISTINCT tanggal FROM jadwal WHERE status = 'Belum Dibooking' ORDER BY tanggal");
+if ($tq) {
+    while ($r = $tq->fetch_assoc()) {
+        $tanggalTersedia[] = $r['tanggal'];
     }
 }
 
-// ---------- ambil daftar studio (dengan fallback dan cek nama kolom) ----------
-$studioList = $_SESSION['booking_data']['studioList'] ?? [];
-
-if (!is_array($studioList) || empty($studioList)) {
-    // coba query dengan kolom 'nama'
-    $q1 = $koneksi->query("SELECT id_studio, nama FROM studio ORDER BY nama");
-    if ($q1 && $q1->num_rows > 0) {
-        $studioList = $q1->fetch_all(MYSQLI_ASSOC);
-        // pastikan setiap row punya key 'nama'
-        foreach ($studioList as &$r) {
-            if (!isset($r['nama']))
-                $r['nama'] = $r['nama_studio'] ?? '';
-        }
-        unset($r);
-    } else {
-        // jika gagal (kolom 'nama' mungkin tidak ada), coba 'nama_studio'
-        $q2 = $koneksi->query("SELECT id_studio, nama_studio FROM studio ORDER BY nama_studio");
-        $studioList = [];
-        if ($q2 && $q2->num_rows > 0) {
-            while ($s = $q2->fetch_assoc()) {
-                // normalisasi key jadi 'nama'
-                $studioList[] = [
-                    'id_studio' => $s['id_studio'],
-                    'nama' => $s['nama_studio']
-                ];
-            }
-        }
-    }
+// Ambil daftar studio
+$studioList = [];
+$q = $koneksi->query("SELECT id_studio, nama FROM studio ORDER BY nama");
+if ($q && $q->num_rows > 0) {
+    $studioList = $q->fetch_all(MYSQLI_ASSOC);
 }
 
-// jika session punya paketOptions gunakan itu
-if (isset($_SESSION['booking_data']['paketOptions']) && is_array($_SESSION['booking_data']['paketOptions'])) {
-    $paketOptions = $_SESSION['booking_data']['paketOptions'];
-}
-
-// safety: pastikan array
+// Safety check
 $tanggalTersedia = is_array($tanggalTersedia) ? $tanggalTersedia : [];
 $studioList = is_array($studioList) ? $studioList : [];
 $paketOptions = is_array($paketOptions) ? $paketOptions : [];
-
 ?>
-<!DOCTYPE html>
-<html lang="id">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Walk-in Studio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
-    <style>
-        :root {
-            --primary: #6366f1;
-            --secondary: #a855f7;
-            --success: #10b981;
-            --danger: #ef4444;
-            --gray-100: #f3f4f6;
-            --gray-300: #d1d5db;
-            --gray-500: #6b7280;
-            --gray-700: #374151;
-            --gray-900: #1f2937;
-        }
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+  * {
+    font-family: 'Poppins', sans-serif;
+  }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  .content-body {
+    background: white;
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+    overflow-x: hidden;
+  }
+  
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #e0f2fe 0%, #f3e8ff 100%);
-            min-height: 100vh;
-            padding: 2rem 1rem;
-            color: var(--gray-900);
-        }
+  .container-fluid {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+  /* Header Section */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding: 20px 0;
+  }
 
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-        .header-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
-        }
+  .header-left h4 {
+    font-size: 28px;
+    font-weight: 800;
+    color: black;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
 
-        .header h1 {
-            font-size: 2.25rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-        }
+  .header-left p {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0;
+  }
 
-        .header p {
-            color: var(--gray-500);
-            font-size: 1rem;
-        }
+  .back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(15, 23, 42, 0.25);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    backdrop-filter: blur(10px);
+    transition: all 0.25s ease;
+  }
 
-        .form-card {
-            background: white;
-            border-radius: 1.5rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
+  .back-button:hover {
+    background: rgba(15, 23, 42, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.45);
+  }
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            padding: 2rem;
-        }
+  /* Form Card */
+  .form-card {
+    background: white;
+    border-radius: 2rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    animation: fadeInUp 0.6s ease-out;
+  }
 
-        .form-section {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
+  @keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+  }
 
-        .section-header {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--gray-900);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid #e0e7ff;
-        }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 0;
+  }
 
-        .section-header i {
-            color: var(--primary);
-            font-size: 1.5rem;
-        }
+  .form-section {
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
+  .form-section:first-child {
+    border-right: 1px solid #e5e7eb;
+  }
 
-        .form-label {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--gray-700);
-        }
+  .form-section:last-child {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3e8ff 100%);
+  }
 
-        .form-label .required {
-            color: var(--danger);
-        }
+  .section-header {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 3px solid #7c3aed;
+    margin-bottom: 0.5rem;
+  }
 
-        .input-wrapper {
-            position: relative;
-        }
+  .section-header i {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    color: white;
+    border-radius: 0.75rem;
+    font-size: 1.25rem;
+  }
 
-        .input-icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #9ca3af;
-            font-size: 1.125rem;
-        }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
 
-        .form-input,
-        .form-select {
-            width: 100%;
-            padding: 0.875rem 1rem 0.875rem 3rem;
-            border: 2px solid var(--gray-300);
-            border-radius: 0.75rem;
-            font-size: 1rem;
-            transition: all 0.3s;
-            font-family: 'Inter', sans-serif;
-        }
+  .form-label {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 
-        .form-input:focus,
-        .form-select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
+  .form-label .required {
+    color: #ef4444;
+    font-size: 1.125rem;
+  }
 
-        .form-input[readonly] {
-            background: #f9fafb;
-            color: var(--primary);
-            font-weight: 600;
-        }
+  .input-wrapper {
+    position: relative;
+  }
 
-        .time-slots-container {
-            margin-top: 1rem;
-        }
+  .input-icon {
+    position: absolute;
+    left: 1.125rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 1.25rem;
+    transition: color 0.3s ease;
+    z-index: 1;
+  }
 
-        .time-slots {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 0.75rem;
-            max-height: 280px;
-            overflow-y: auto;
-            padding: 0.5rem;
-            border: 2px solid var(--gray-300);
-            border-radius: 0.75rem;
-            background: #fafafa;
-        }
+  .form-input:focus + .input-icon,
+  .form-select:focus + .input-icon {
+    color: #7c3aed;
+  }
 
-        .time-slot {
-            position: relative;
-            cursor: pointer;
-            padding: 0.875rem 0.5rem;
-            border: 2px solid var(--gray-300);
-            border-radius: 0.5rem;
-            text-align: center;
-            transition: all 0.3s;
-            background: white;
-            font-size: 0.875rem;
-        }
+  .form-input,
+  .form-select {
+    width: 100%;
+    padding: 1rem 1.125rem 1rem 3.5rem;
+    border: 2px solid #d1d5db;
+    border-radius: 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: white;
+  }
 
-        .time-slot:hover:not(.booked) {
-            border-color: var(--primary);
-            background: #f0f9ff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
-        }
+  .form-input:hover,
+  .form-select:hover {
+    border-color: #9ca3af;
+  }
 
-        .time-slot.selected {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            border-color: var(--primary);
-            font-weight: 600;
-        }
+  .form-input:focus,
+  .form-select:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+    background: white;
+  }
 
-        .time-slot.booked {
-            background: var(--gray-100);
-            color: #9ca3af;
-            border-color: var(--gray-300);
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
+  .form-input[readonly] {
+    background: linear-gradient(135deg, #f9fafb, #faf5ff);
+    color: #7c3aed;
+    font-weight: 600;
+    cursor: default;
+  }
 
-        .time-slot input[type="radio"] {
-            display: none;
-        }
+  /* Time Slots */
+  .time-slots-container {
+    margin-top: 0.5rem;
+  }
 
-        .time-text {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    padding: 0.875rem 1rem;
+    background: white;
+    border-radius: 0.75rem;
+    border: 2px solid #e5e7eb;
+  }
 
-        .time-status {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6b7280;
+  }
 
-        .summary-card {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 1rem;
-            padding: 1.5rem;
-            color: white;
-        }
+  .legend-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 0.5rem;
+    border: 2px solid #d1d5db;
+  }
 
-        .summary-title {
-            font-size: 1.125rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+  .legend-color.available {
+    background: linear-gradient(135deg, #ffffff, #f0f9ff);
+    border-color: #7c3aed;
+  }
 
-        .summary-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 0.9rem;
-        }
+  .legend-color.booked {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    border-color: #ef4444;
+  }
 
-        .summary-item:last-child {
-            border: none;
-        }
+  .time-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.875rem;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 1rem;
+    background: white;
+  }
 
-        .summary-label {
-            opacity: 0.9;
-        }
+  .time-slot {
+    position: relative;
+    cursor: pointer;
+    padding: 1rem 0.75rem;
+    border: 2px solid #d1d5db;
+    border-radius: 0.875rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #ffffff, #fafafa);
+    font-size: 0.9375rem;
+  }
 
-        .summary-value {
-            font-weight: 600;
-            text-align: right;
-        }
+  .time-slot:hover:not(.booked) {
+    border-color: #7c3aed;
+    background: linear-gradient(135deg, #faf5ff, #f0f9ff);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(124, 58, 237, 0.2);
+  }
 
-        .summary-total {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 2px solid rgba(255, 255, 255, 0.3);
-        }
+  .time-slot.selected {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    color: white;
+    border-color: #7c3aed;
+    font-weight: 700;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 20px rgba(124, 58, 237, 0.4);
+  }
 
-        .summary-total .summary-label {
-            font-size: 1.125rem;
-            font-weight: 700;
-        }
-
-        .summary-total .summary-value {
-            font-size: 1.5rem;
-            font-weight: 800;
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 1.25rem;
-            background: linear-gradient(135deg, var(--success), #059669);
-            color: white;
-            border: none;
-            border-radius: 0.75rem;
-            font-size: 1.125rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            transition: all 0.3s;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
-            margin-top: 1rem;
-        }
-
-        .btn-submit:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
-        }
-
-        .btn-submit:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .footer-note {
-            text-align: center;
-            margin-top: 1.5rem;
-            color: var(--gray-500);
-            font-size: 0.875rem;
-        }
-
-        .legend {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 0.5rem;
-            font-size: 0.75rem;
-            color: var(--gray-500);
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .legend-color {
-            width: 18px;
-            height: 18px;
-            border-radius: 0.25rem;
-            border: 2px solid var(--gray-300);
-        }
-
-        .legend-color.available {
-            background: white;
-        }
-
-        .legend-color.booked {
-            background: var(--gray-100);
-        }
-
-        @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-                padding: 1.5rem;
-            }
-
-            .header h1 {
-                font-size: 1.875rem;
-            }
-
-            .time-slots {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            }
-        }
-        .time-slot.booked {
-    background: #ffdddd;
-    border: 1px solid #ff6b6b;
-    color: #b40000;
+  .time-slot.booked {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #ef4444;
+    border-color: #fca5a5;
     cursor: not-allowed;
+    opacity: 0.75;
+  }
+
+  .time-slot input[type="radio"] {
+    display: none;
+  }
+
+  .time-text {
+    font-weight: 700;
+    margin-bottom: 0.375rem;
+    font-size: 1rem;
+  }
+
+  /* Summary Card */
+  .summary-card {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    color: white;
+    box-shadow: 0 15px 35px rgba(124, 58, 237, 0.3);
+  }
+
+  .summary-title {
+    font-size: 1.375rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .summary-title i {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 0.5rem;
+  }
+
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.9375rem;
+    gap: 1rem;
+  }
+
+  .summary-item:last-of-type {
+    border: none;
+  }
+
+  .summary-label {
+    opacity: 0.95;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .summary-value {
+    font-weight: 700;
+    text-align: right;
+    word-break: break-word;
+  }
+
+  .summary-total {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .summary-total .summary-label {
+    font-size: 1.25rem;
+    font-weight: 800;
+  }
+
+  .summary-total .summary-value {
+    font-size: 1.75rem;
+    font-weight: 900;
+  }
+
+  /* Submit Button */
+  .btn-submit {
+    width: 100%;
+    padding: 1.375rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 1rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+    margin-top: 1.5rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  .btn-submit:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, #059669, #047857);
+  }
+
+  .btn-submit:disabled {
+    background: linear-gradient(135deg, #9ca3af, #6b7280);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
     opacity: 0.7;
-}
-.time-slot.booked .time-status {
-    color: #b40000;
-    font-weight: bold;
-}
+  }
 
-    </style>
-</head>
+  /* Footer Note */
+  .footer-note {
+    text-align: center;
+    margin-top: 2rem;
+    color: white;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
 
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="header-icon"><i class="fas fa-calendar-check"></i></div>
-            <h1>Booking Walk-in</h1>
-            <p>Lengkapi data pelanggan yang datang langsung ke studio</p>
-        </div>
+  .footer-note .required {
+    color: #fca5a5;
+    font-weight: 700;
+  }
 
-        <form method="POST" action="../controller/controller_booking.php" class="form-card" id="bookingForm">
-            <div class="form-grid">
-                <!-- Kiri: Input -->
-                <div class="form-section">
-                    <div>
-                        <div class="section-header"><i class="fas fa-user"></i> Informasi Pelanggan</div>
-                        <div class="form-group">
-                            <label class="form-label">Nama Lengkap <span class="required">*</span></label>
-                            <div class="input-wrapper"><i class="fas fa-user input-icon"></i>
-                                <input type="text" name="nama" class="form-input" placeholder="Nama lengkap" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <div class="input-wrapper"><i class="fas fa-envelope input-icon"></i>
-                                <input type="email" name="email" class="form-input" placeholder="email@contoh.com">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">WhatsApp <span class="required">*</span></label>
-                            <div class="input-wrapper"><i class="fab fa-whatsapp input-icon"></i>
-                                <input type="tel" name="telepon" class="form-input" placeholder="08xxxxxxxxxx" required>
-                            </div>
-                        </div>
-                    </div>
+  /* Empty State */
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #9ca3af;
+  }
 
-                    <div>
-                        <div class="section-header"><i class="fas fa-calendar-alt"></i> Jadwal & Paket</div>
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
 
-                        <!-- Pilih Studio -->
-                        <div class="form-group">
-                            <label class="form-label">Pilih Studio <span class="required">*</span></label>
-                            <div class="input-wrapper"><i class="fas fa-building input-icon"></i>
-                                <select name="id_studio" id="studio" class="form-select" required
-                                    onchange="loadJadwal(document.getElementById('tanggalHidden').value)">
-                                    <option value="">-- Pilih Studio --</option>
-                                    <?php foreach ($studioList as $s): ?>
-                                        <option value="<?= htmlspecialchars($s['id_studio']) ?>">
-                                            <?= htmlspecialchars($s['nama']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
+    .form-section:first-child {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+    }
+  }
 
-                        <!-- Tanggal -->
-                        <div class="form-group">
-                            <label class="form-label">Pilih Tanggal <span class="required">*</span></label>
-                            <div class="input-wrapper"><i class="fas fa-calendar input-icon"></i>
-                                <input type="text" id="tanggalPicker" class="form-input"
-                                    placeholder="Klik untuk memilih" readonly required>
-                                <input type="hidden" name="tanggal" id="tanggalHidden">
-                            </div>
-                        </div>
+  @media (max-width: 768px) {
+    .content-body {
+        padding: 15px;
+    }
 
-                        <!-- Jam -->
-                        <div class="form-group">
-                            <label class="form-label">Pilih Jam <span class="required">*</span></label>
-                            <div class="legend">
-                                <div class="legend-item">
-                                    <div class="legend-color available"></div><span>Belum Dibooking</span>
-                                </div>
-                                <div class="legend-item">
-                                    <div class="legend-color booked"></div><span>Dibooking</span>
-                                </div>
-                            </div>
-                            <div class="time-slots-container">
-                                <div class="time-slots" id="timeSlots">
-                                    <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#9ca3af;">
-                                        <i class="fas fa-clock" style="font-size:2rem;margin-bottom:0.5rem;"></i>
-                                        <p>Pilih studio dan tanggal terlebih dahulu</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <input type="hidden" name="jadwal_id" id="jadwalId" required>
-                            <input type="hidden" name="jam_booking" id="jamBooking">
-                        </div>
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
 
-                        <!-- Paket -->
-                        <div class="form-group">
-                            <label class="form-label">Pilih Paket <span class="required">*</span></label>
-                            <div class="input-wrapper"><i class="fas fa-box input-icon"></i>
-                                <select name="paket" id="paket" class="form-select" required onchange="updateTotal()">
-                                    <option value="">-- Pilih Paket --</option>
-                                    <?php foreach ($paketOptions as $p): ?>
-                                        <option value="<?= htmlspecialchars($p['value']) ?>"
-                                            data-price="<?= htmlspecialchars($p['price']) ?>">
-                                            <?= htmlspecialchars($p['label']) ?> - Rp
-                                            <?= number_format($p['price'], 0, ',', '.') ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    .header-left h4 {
+        font-size: 2rem;
+    }
 
-                <!-- Kanan: Ringkasan & Pembayaran -->
-                <div class="form-section">
-                    <div>
-                        <div class="section-header"><i class="fas fa-credit-card"></i> Pembayaran</div>
-                        <div class="form-group">
-                            <label class="form-label">Total Tagihan</label>
-                            <div class="input-wrapper"><i class="fas fa-rupiah-sign input-icon"></i>
-                                <input type="text" id="totalTagihanDisplay" class="form-input" readonly
-                                    placeholder="Pilih paket">
-                                <input type="hidden" name="totalTagihan" id="totalTagihan">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Metode Pembayaran <span class="required">*</span></label>
-                            <div class="input-wrapper"><i class="fas fa-wallet input-icon"></i>
-                                <select name="metodePembayaran" class="form-select" required>
-                                    <option value="">-- Pilih Metode --</option>
-                                    <option value="qris">QRIS</option>
-                                    <option value="va">Virtual Account</option>
-                                    <option value="kes">Tunai</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+    .header-left p {
+        font-size: 1rem;
+    }
 
-                    <div class="summary-card">
-                        <div class="summary-title"><i class="fas fa-receipt"></i> Ringkasan</div>
-                        <div class="summary-item"><span class="summary-label">Pelanggan:</span><span
-                                class="summary-value" id="summaryNama">-</span></div>
-                        <div class="summary-item"><span class="summary-label">WhatsApp:</span><span
-                                class="summary-value" id="summaryTelepon">-</span></div>
-                        <div class="summary-item"><span class="summary-label">Jadwal:</span><span class="summary-value"
-                                id="summaryTanggalWaktu">-</span></div>
-                        <div class="summary-item"><span class="summary-label">Paket:</span><span class="summary-value"
-                                id="summaryPaket">-</span></div>
-                        <div class="summary-item"><span class="summary-label">Pembayaran:</span><span
-                                class="summary-value" id="summaryMetode">-</span></div>
-                        <div class="summary-total">
-                            <div class="summary-item"><span class="summary-label">Total:</span><span
-                                    class="summary-value" id="summaryTotal">Rp 0</span></div>
-                        </div>
-                    </div>
+    .form-section {
+        padding: 1.5rem;
+    }
 
-                    <button type="submit" class="btn-submit" id="submitBtn" disabled><i class="fas fa-save"></i> Simpan
-                        Booking</button>
-                </div>
-            </div>
-        </form>
+    .time-slots {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        max-height: 250px;
+    }
 
-        <div class="footer-note">
-            <p><span class="required">*</span> Wajib diisi</p>
-        </div>
+    .section-header {
+        font-size: 1.125rem;
+    }
+
+    .summary-card {
+        padding: 1.5rem;
+    }
+  }
+</style>
+
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Konten Utama -->
+<div class="content-body">
+  <div class="container-fluid">
+    <!-- Header Page -->
+    <div class="page-header">
+      <div class="header-left">
+        <h4>Booking Offline</h4>
+      </div>
+      <a href="order.php" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+        <span>Kembali ke daftar booking</span>
+      </a>
     </div>
 
+    <!-- Form Card -->
+    <div class="form-card">
+      <form method="POST" action="../controller/controller_booking.php" id="bookingForm">
+        <input type="hidden" name="tambah" value="1">
+        <div class="form-grid">
+          <!-- Kiri: Input Data -->
+          <div class="form-section">
+            <!-- Informasi Pelanggan -->
+            <div>
+              <div class="section-header">
+                <i class="fas fa-user"></i>
+                <span>Informasi Pelanggan</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">
+                  Nama Lengkap <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <input type="text" name="nama" class="form-input" placeholder="Masukkan nama lengkap" required autofocus>
+                  <i class="fas fa-user input-icon"></i>
+                </div>
+                <small style="font-size: 0.8rem; color: #6b7280;">Gunakan nama lengkap sesuai KTP atau identitas lainnya.</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <div class="input-wrapper">
+                  <input type="email" name="email" class="form-input" placeholder="email@contoh.com">
+                  <i class="fas fa-envelope input-icon"></i>
+                </div>
+                <small style="font-size: 0.8rem; color: #6b7280;">Opsional, digunakan untuk mengirim bukti booking.</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label">
+                  WhatsApp <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <input type="tel" name="telepon" class="form-input" placeholder="08xxxxxxxxxx" pattern="08[0-9]{8,11}" required>
+                  <i class="fab fa-whatsapp input-icon"></i>
+                </div>
+                <small style="font-size: 0.8rem; color: #6b7280;">Nomor aktif WhatsApp pelanggan untuk pengingat & konfirmasi.</small>
+              </div>
+            </div>
+
+            <!-- Jadwal & Paket -->
+            <div>
+              <div class="section-header">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Jadwal & Paket</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  Pilih Studio <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <select name="id_studio" id="studio" class="form-select" required>
+                    <option value="">-- Pilih Studio --</option>
+                    <?php foreach ($studioList as $s): ?>
+                      <option value="<?= htmlspecialchars($s['id_studio']) ?>">
+                        <?= htmlspecialchars($s['nama']) ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
+                  <i class="fas fa-building input-icon"></i>
+                </div>
+                <small style="font-size: 0.8rem; color: #6b7280;">Pilih ruangan studio yang akan digunakan pelanggan.</small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  Pilih Tanggal <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <input type="text" id="tanggalPicker" class="form-input" placeholder="Klik untuk memilih tanggal" readonly required>
+                  <input type="hidden" name="tanggal" id="tanggalHidden">
+                  <i class="fas fa-calendar input-icon"></i>
+                </div>
+                <small style="font-size: 0.8rem; color: #6b7280;">Hanya tanggal yang masih tersedia yang dapat dipilih.</small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  Pilih Jam <span class="required">*</span>
+                </label>
+                <div class="legend">
+                  <div class="legend-item">
+                    <div class="legend-color available"></div>
+                    <span>Tersedia</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color booked"></div>
+                    <span>Sudah Dibooking</span>
+                  </div>
+                </div>
+                <div class="time-slots-container">
+                  <div class="time-slots" id="timeSlots">
+                    <div class="empty-state">
+                      <i class="fas fa-clock"></i>
+                      <p>Pilih studio dan tanggal terlebih dahulu</p>
+                    </div>
+                  </div>
+                </div>
+                <input type="hidden" name="jadwal_id" id="jadwalId" required>
+                <input type="hidden" name="jam_booking" id="jamBooking">
+                <small style="font-size: 0.8rem; color: #6b7280; display:block; margin-top:0.25rem;">Klik salah satu jam yang tersedia untuk memilih jadwal.</small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  Pilih Paket <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <select name="paket" id="paket" class="form-select" required>
+                    <option value="">-- Pilih Paket --</option>
+                    <?php foreach ($paketOptions as $p): ?>
+                      <option value="<?= htmlspecialchars($p['value']) ?>" data-price="<?= htmlspecialchars($p['price']) ?>">
+                        <?= htmlspecialchars($p['label']) ?> - Rp <?= number_format($p['price'], 0, ',', '.') ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
+                  <i class="fas fa-box input-icon"></i>
+                </div>
+                <small style="font-size: 0.8rem; color: #6b7280;">Sesuaikan paket dengan kebutuhan durasi & fasilitas pelanggan.</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kanan: Ringkasan & Pembayaran -->
+          <div class="form-section">
+            <!-- Pembayaran -->
+            <div>
+              <div class="section-header">
+                <i class="fas fa-credit-card"></i>
+                <span>Pembayaran</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Total Tagihan</label>
+                <div class="input-wrapper">
+                  <input type="text" id="totalTagihanDisplay" class="form-input" readonly placeholder="Pilih paket terlebih dahulu">
+                  <input type="hidden" name="totalTagihan" id="totalTagihan">
+                  <i class="fas fa-rupiah-sign input-icon"></i>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">
+                  Metode Pembayaran <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <select name="metodePembayaran" class="form-select" required>
+                    <option value="">-- Pilih Metode --</option>
+                    <option value="qris">QRIS</option>
+                    <option value="cash">Tunai</option>
+                  </select>
+                  <i class="fas fa-wallet input-icon"></i>
+                </div>
+                <small style="font-size: 0.8rem; color: #6b7280;">Pilih metode pembayaran yang digunakan pelanggan saat ini.</small>
+              </div>
+            </div>
+
+            <!-- Ringkasan Booking -->
+            <div class="summary-card">
+              <div class="summary-title">
+                <i class="fas fa-receipt"></i>
+                <span>Ringkasan Booking</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Pelanggan:</span>
+                <span class="summary-value" id="summaryNama">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">WhatsApp:</span>
+                <span class="summary-value" id="summaryTelepon">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Studio:</span>
+                <span class="summary-value" id="summaryStudio">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Jadwal:</span>
+                <span class="summary-value" id="summaryTanggalWaktu">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Paket:</span>
+                <span class="summary-value" id="summaryPaket">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Pembayaran:</span>
+                <span class="summary-value" id="summaryMetode">-</span>
+              </div>
+              <div class="summary-total">
+                <div class="summary-item">
+                  <span class="summary-label">Total:</span>
+                  <span class="summary-value" id="summaryTotal">Rp 0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tombol Submit -->
+            <button type="submit" class="btn-submit" id="submitBtn" disabled>
+              <i class="fas fa-save"></i>
+              <span>Simpan Booking</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Footer Note -->
+    <div class="footer-note">
+      <p><span class="required">*</span> Wajib diisi</p>
+    </div>
+  </div>
+</div>
+
+<?php require "../master/footer.php"; ?>
+
+<!-- JavaScript Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 <script>
-    const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { 
-        style: 'currency', 
-        currency: 'IDR', 
-        minimumFractionDigits: 0 
-    }).format(num);
+// Format Rupiah
+const formatRupiah = (num) => {
+  return new Intl.NumberFormat('id-ID', { 
+    style: 'currency', 
+    currency: 'IDR', 
+    minimumFractionDigits: 0 
+  }).format(num);
+};
 
-    // Inisialisasi Flatpickr
-    flatpickr("#tanggalPicker", {
-        locale: "id",
-        dateFormat: "Y-m-d",
-        altInput: true,
-        altFormat: "d F Y",
-        minDate: "today",
-        enable: <?= json_encode($tanggalTersedia) ?>.map(d => new Date(d)),
-        onChange: function (selectedDates, dateStr) {
-            console.log("Tanggal dipilih:", dateStr); // Debug
-            
-            document.getElementById('tanggalHidden').value = dateStr;
-            document.getElementById('jadwalId').value = '';
-            document.getElementById('jamBooking').value = '';
-            document.getElementById('summaryTanggalWaktu').textContent = '-';
-            
-            // Reset semua slot waktu
-            document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
-            
-            const studioId = document.getElementById('studio').value;
-            console.log("Studio ID:", studioId); // Debug
-            
-            if (studioId) {
-                loadJadwal(dateStr);
-            } else {
-                // Tampilkan pesan untuk pilih studio dulu
-                const container = document.getElementById('timeSlots');
-                container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#9ca3af;">
-                    <i class="fas fa-building" style="font-size:2rem;margin-bottom:0.5rem;"></i>
-                    <p>Silakan pilih studio terlebih dahulu</p>
-                </div>`;
-            }
-            
-            checkForm();
-        }
-    });
-
-    // Fungsi load jadwal yang diperbaiki
-    function loadJadwal(tanggal) {
-        const container = document.getElementById('timeSlots');
-        const studioId = document.getElementById('studio').value;
-
-        console.log("loadJadwal called - Tanggal:", tanggal, "Studio:", studioId); // Debug
-
-        if (!tanggal || !studioId) {
-            container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#9ca3af;">
-                <i class="fas fa-info-circle" style="font-size:2rem;margin-bottom:0.5rem;"></i>
-                <p>Pilih studio dan tanggal terlebih dahulu</p>
-            </div>`;
-            return;
-        }
-
-        // Tampilkan loading
-        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#9ca3af;">
-            <i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:0.5rem;"></i>
-            <p>Memuat jadwal...</p>
-        </div>`;
-
-        const url = `get_jadwal.php?tanggal=${encodeURIComponent(tanggal)}&studio=${encodeURIComponent(studioId)}`;
-        console.log("Fetching URL:", url); // Debug
-
-        fetch(url)
-            .then(response => {
-                console.log("Response status:", response.status); // Debug
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Data received:", data); // Debug
-                
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                
-                if (!data || !Array.isArray(data) || data.length === 0) {
-                    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#9ca3af;">
-                        <i class="fas fa-calendar-times" style="font-size:2rem;margin-bottom:0.5rem;"></i>
-                        <p>Tidak ada jadwal tersedia untuk tanggal dan studio ini</p>
-                    </div>`;
-                    return;
-                }
-                
-                let html = '';
-                data.forEach(j => {
-                    const booked = (j.status && (
-                        j.status.toLowerCase() === 'dibooking' || 
-                        j.status.toLowerCase() === 'booked'
-                    ));
-                    
-                    const mulai = j.jam_mulai.substring(0, 5);
-                    const selesai = j.jam_selesai.substring(0, 5);
-                    const statusText = booked ? 'Dibooking' : 'Belum Dibooking';
-
-                    html += `<label class="time-slot ${booked ? 'booked' : ''}" 
-                        ${!booked ? `onclick="selectSlot(this, ${j.id_jadwal}, '${mulai}', '${selesai}', '${tanggal}')"` : ''}>
-                        <input type="radio" name="waktu" ${booked ? 'disabled' : ''}>
-                        <div class="time-text">${mulai} - ${selesai}</div>
-                        <div class="time-status">${statusText}</div>
-                    </label>`;
-                });
-                
-                container.innerHTML = html;
-                console.log("Jadwal berhasil dimuat:", data.length, "slot"); // Debug
-            })
-            .catch(err => {
-                console.error("Error loading jadwal:", err); // Debug
-                container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#ef4444;">
-                    <i class="fas fa-exclamation-triangle" style="font-size:2rem;margin-bottom:0.5rem;"></i>
-                    <p>Gagal memuat jadwal</p>
-                    <p style="font-size:0.8rem;margin-top:0.5rem;">${err.message}</p>
-                </div>`;
-            });
+// Inisialisasi Flatpickr
+const tanggalTersedia = <?= json_encode($tanggalTersedia) ?>;
+const fp = flatpickr("#tanggalPicker", {
+  locale: "id",
+  dateFormat: "Y-m-d",
+  altInput: true,
+  altFormat: "d F Y",
+  minDate: "today",
+  enable: tanggalTersedia,
+  onChange: function (selectedDates, dateStr) {
+    document.getElementById('tanggalHidden').value = dateStr;
+    document.getElementById('jadwalId').value = '';
+    document.getElementById('jamBooking').value = '';
+    document.getElementById('summaryTanggalWaktu').textContent = '-';
+    
+    // Reset semua slot waktu
+    document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+    
+    const studioId = document.getElementById('studio').value;
+    
+    if (studioId) {
+      loadJadwal(dateStr);
+    } else {
+      const container = document.getElementById('timeSlots');
+      container.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-building"></i>
+          <p>Silakan pilih studio terlebih dahulu</p>
+        </div>
+      `;
     }
-
-    function selectSlot(el, id, mulai, selesai, tanggal) {
-        console.log("Slot selected:", id, mulai, selesai); // Debug
-        
-        document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
-        if (el) el.classList.add('selected');
-        
-        document.getElementById('jadwalId').value = id;
-        document.getElementById('jamBooking').value = mulai;
-        
-        const date = new Date(tanggal).toLocaleDateString('id-ID', { 
-            weekday: 'long', 
-            day: 'numeric', 
-            month: 'long', 
-            year: 'numeric' 
-        });
-        
-        document.getElementById('summaryTanggalWaktu').textContent = `${date}, ${mulai} - ${selesai}`;
-        checkForm();
-    }
-
-    function updateTotal() {
-        const select = document.getElementById('paket');
-        const opt = select.options[select.selectedIndex];
-        const price = opt?.dataset.price;
-        
-        if (price) {
-            document.getElementById('totalTagihan').value = price;
-            document.getElementById('totalTagihanDisplay').value = formatRupiah(price);
-            document.getElementById('summaryTotal').textContent = formatRupiah(price);
-            document.getElementById('summaryPaket').textContent = opt.text.split(' - ')[0];
-        } else {
-            document.getElementById('totalTagihan').value = '';
-            document.getElementById('totalTagihanDisplay').value = '';
-            document.getElementById('summaryTotal').textContent = 'Rp 0';
-            document.getElementById('summaryPaket').textContent = '-';
-        }
-        checkForm();
-    }
-
-    // Event listener untuk form input
-    document.getElementById('bookingForm').addEventListener('input', e => {
-        const name = e.target.name;
-        const val = e.target.value;
-        
-        switch (name) {
-            case 'nama': 
-                document.getElementById('summaryNama').textContent = val || '-'; 
-                break;
-            case 'telepon': 
-                document.getElementById('summaryTelepon').textContent = val || '-'; 
-                break;
-            case 'metodePembayaran':
-                const text = e.target.options[e.target.selectedIndex]?.text;
-                document.getElementById('summaryMetode').textContent = text || '-'; 
-                break;
-        }
-        checkForm();
-    });
-
-    function checkForm() {
-        const required = ['nama', 'telepon', 'jadwal_id', 'paket', 'metodePembayaran', 'id_studio', 'tanggal'];
-        const complete = required.every(field => {
-            const el = document.querySelector(`[name="${field}"]`);
-            const value = el ? el.value.toString().trim() : '';
-            console.log(`Field ${field}:`, value); // Debug
-            return value !== '';
-        });
-        
-        document.getElementById('submitBtn').disabled = !complete;
-        console.log("Form complete:", complete); // Debug
-    }
-
-    // Event listener untuk perubahan studio
-    document.getElementById('studio').addEventListener('change', function() {
-        console.log("Studio changed:", this.value); // Debug
-        
-        const tanggal = document.getElementById('tanggalHidden').value;
-        console.log("Current tanggal:", tanggal); // Debug
-        
-        // Reset jadwal selection
-        document.getElementById('jadwalId').value = '';
-        document.getElementById('jamBooking').value = '';
-        document.getElementById('summaryTanggalWaktu').textContent = '-';
-        document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
-        
-        if (tanggal && this.value) {
-            loadJadwal(tanggal);
-        } else if (!tanggal) {
-            const container = document.getElementById('timeSlots');
-            container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#9ca3af;">
-                <i class="fas fa-calendar" style="font-size:2rem;margin-bottom:0.5rem;"></i>
-                <p>Silakan pilih tanggal terlebih dahulu</p>
-            </div>`;
-        }
-        
-        checkForm();
-    });
-
-    // Initial check
+    
     checkForm();
-</script>
-</body>
+  }
+});
 
-</html>
+// Fungsi load jadwal
+function loadJadwal(tanggal) {
+  const container = document.getElementById('timeSlots');
+  const studioId = document.getElementById('studio').value;
+
+  if (!tanggal || !studioId) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-info-circle"></i>
+        <p>Pilih studio dan tanggal terlebih dahulu</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Tampilkan loading
+  container.innerHTML = `
+    <div class="empty-state">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Memuat jadwal...</p>
+    </div>
+  `;
+
+  const url = `../controller/controller_booking.php?action=get_jadwal&tanggal=${encodeURIComponent(tanggal)}&studio=${encodeURIComponent(studioId)}`;
+
+  fetch(url)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <p>Tidak ada jadwal tersedia untuk tanggal dan studio ini</p>
+          </div>
+        `;
+        return;
+      }
+      
+      let html = '';
+      data.forEach(j => {
+        const booked = (j.status && (
+          j.status.toLowerCase() === 'dibooking' || 
+          j.status.toLowerCase() === 'booked'
+        ));
+        
+        const mulai = j.jam_mulai.substring(0, 5);
+        const selesai = j.jam_selesai.substring(0, 5);
+        const statusText = booked ? 'Dibooking' : 'Tersedia';
+
+        html += `
+          <label class="time-slot ${booked ? 'booked' : ''}" 
+            ${!booked ? `onclick="selectSlot(this, ${j.id_jadwal}, '${mulai}', '${selesai}', '${tanggal}')"` : ''}>
+            <input type="radio" name="waktu" ${booked ? 'disabled' : ''}>
+            <div class="time-text">${mulai} - ${selesai}</div>
+            <div class="time-status">${statusText}</div>
+          </label>
+        `;
+      });
+      
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      console.error("Error loading jadwal:", err);
+      container.innerHTML = `
+        <div class="empty-state" style="color: #ef4444;">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>Gagal memuat jadwal</p>
+          <p style="font-size: 0.875rem; margin-top: 0.5rem;">${err.message}</p>
+        </div>
+      `;
+    });
+}
+
+// Fungsi select slot waktu
+function selectSlot(el, id, mulai, selesai, tanggal) {
+  document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+  if (el) el.classList.add('selected');
+  
+  document.getElementById('jadwalId').value = id;
+  document.getElementById('jamBooking').value = mulai;
+  
+  const date = new Date(tanggal + 'T00:00:00').toLocaleDateString('id-ID', { 
+    weekday: 'long', 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  });
+  
+  document.getElementById('summaryTanggalWaktu').textContent = `${date}, ${mulai} - ${selesai}`;
+  checkForm();
+}
+
+// Fungsi update total
+function updateTotal() {
+  const select = document.getElementById('paket');
+  const opt = select.options[select.selectedIndex];
+  const price = opt?.dataset.price;
+  
+  if (price) {
+    document.getElementById('totalTagihan').value = price;
+    document.getElementById('totalTagihanDisplay').value = formatRupiah(price);
+    document.getElementById('summaryTotal').textContent = formatRupiah(price);
+    document.getElementById('summaryPaket').textContent = opt.text.split(' - ')[0];
+  } else {
+    document.getElementById('totalTagihan').value = '';
+    document.getElementById('totalTagihanDisplay').value = '';
+    document.getElementById('summaryTotal').textContent = 'Rp 0';
+    document.getElementById('summaryPaket').textContent = '-';
+  }
+  checkForm();
+}
+
+// Event listener untuk form input
+document.getElementById('bookingForm').addEventListener('input', function(e) {
+  const name = e.target.name;
+  const val = e.target.value;
+  
+  switch (name) {
+    case 'nama': 
+      document.getElementById('summaryNama').textContent = val || '-'; 
+      break;
+    case 'telepon': 
+      document.getElementById('summaryTelepon').textContent = val || '-'; 
+      break;
+    case 'metodePembayaran':
+      const text = e.target.options[e.target.selectedIndex]?.text;
+      document.getElementById('summaryMetode').textContent = text || '-'; 
+      break;
+    case 'paket':
+      updateTotal();
+      break;
+  }
+  checkForm();
+});
+
+// Event listener untuk perubahan studio
+document.getElementById('studio').addEventListener('change', function() {
+  const tanggal = document.getElementById('tanggalHidden').value;
+  
+  // Reset jadwal selection
+  document.getElementById('jadwalId').value = '';
+  document.getElementById('jamBooking').value = '';
+  document.getElementById('summaryTanggalWaktu').textContent = '-';
+  document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+  
+  // Update ringkasan studio
+  const selectedOption = this.options[this.selectedIndex];
+  document.getElementById('summaryStudio').textContent = selectedOption && selectedOption.value 
+    ? selectedOption.text 
+    : '-';
+  
+  if (tanggal && this.value) {
+    loadJadwal(tanggal);
+  } else if (!tanggal) {
+    const container = document.getElementById('timeSlots');
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-calendar"></i>
+        <p>Silakan pilih tanggal terlebih dahulu</p>
+      </div>
+    `;
+  }
+  
+  checkForm();
+});
+
+// Fungsi check form validity
+function checkForm() {
+  const required = ['nama', 'telepon', 'jadwal_id', 'paket', 'metodePembayaran', 'id_studio', 'tanggal'];
+  const complete = required.every(field => {
+    const el = document.querySelector(`[name="${field}"]`);
+    const value = el ? el.value.toString().trim() : '';
+    return value !== '';
+  });
+  
+  document.getElementById('submitBtn').disabled = !complete;
+}
+
+// Initial check
+checkForm();
+</script>
