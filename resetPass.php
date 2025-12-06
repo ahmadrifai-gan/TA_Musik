@@ -26,7 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['resetEmail'])) {
         $expiry = date("Y-m-d H:i:s", strtotime("+10 minutes"));
 
         // Simpan ke kolom reset_token
-        $update = $koneksi->prepare("UPDATE user SET reset_token = ?, reset_expiry = ? WHERE id_user = ?");
+        $update = $koneksi->prepare("UPDATE user SET reset_token = ?, reset_espiry = ? WHERE id_user = ?");
         $update->bind_param("ssi", $otp, $expiry, $id_user);
         $update->execute();
         $update->close();
@@ -37,12 +37,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['resetEmail'])) {
             $mail->isSMTP();
             $mail->Host       = 'smtp.gmail.com';
             $mail->SMTPAuth   = true;
-            $mail->Username   = 'refangga1952@gmail.com'; // ganti dengan email kamu
-            $mail->Password   = 'hwfx nsfo kwmy oduj';     // ganti dengan App Password Gmail
+            $mail->Username   = 'nisrinafirdaus02@gmail.com'; // ganti dengan email kamu
+            $mail->Password   = 'lurk svtg ihli uyhr';     // ganti dengan App Password Gmail
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = 587;
 
-            $mail->setFrom('refangga1952@gmail.com', 'Admin Website');
+            $mail->setFrom('nisrinafirdaus02@gmail.com', 'Admin Website');
             $mail->addAddress($email, $nama);
             $mail->isHTML(true);
             $mail->Subject = 'Kode OTP Reset Password';
@@ -80,7 +80,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['otp'])) {
         $message = "Konfirmasi password tidak sama.";
         $step = 2;
     } else {
-        $stmt = $koneksi->prepare("SELECT id_user, reset_expiry FROM user WHERE email = ? AND reset_token = ?");
+        $stmt = $koneksi->prepare("SELECT id_user, reset_espiry FROM user WHERE email = ? AND reset_token = ?");
         $stmt->bind_param("ss", $email, $otp);
         $stmt->execute();
         $stmt->store_result();
@@ -94,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['otp'])) {
                 $step = 2;
             } else {
                 $newHash = password_hash($newPass, PASSWORD_DEFAULT);
-                $update = $koneksi->prepare("UPDATE user SET password = ?, reset_token = NULL, reset_expiry = NULL WHERE id_user = ?");
+                $update = $koneksi->prepare("UPDATE user SET password = ?, reset_token = NULL, reset_espiry = NULL WHERE id_user = ?");
                 $update->bind_param("si", $newHash, $id_user);
                 $update->execute();
                 $update->close();
