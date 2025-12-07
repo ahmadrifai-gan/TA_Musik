@@ -15,11 +15,13 @@ mysqli_query($koneksi, "
     AND id_jadwal NOT IN (SELECT IFNULL(id_jadwal, 0) FROM jadwal_archive)
 ");
 
-// 2. CLEANUP: Hapus SEMUA jadwal yang sudah lewat dari tabel jadwal (kosong & isi)
+// 2. CLEANUP: Hapus SEMUA jadwal yang su dah lewat dari tabel jadwal (kosong & isi)
 mysqli_query($koneksi, "
-    DELETE FROM jadwal 
+    DELETE FROM jadwal
     WHERE tanggal < CURDATE()
+    AND id_jadwal NOT IN (SELECT id_jadwal FROM booking_offline)
 ");
+
 
 // Hasil: Tabel jadwal BERSIH, data penting di-ARCHIVE, data sampah HILANG
 

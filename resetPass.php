@@ -94,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['otp'])) {
                 $step = 2;
             } else {
                 $newHash = password_hash($newPass, PASSWORD_DEFAULT);
-                $update = $koneksi->prepare("UPDATE user SET password = ?, reset_token = NULL, reset_espiry = NULL WHERE id_user = ?");
+                $update = $koneksi->prepare("UPDATE user SET password = ?, reset_token = '', reset_espiry = NULL WHERE id_user = ?");
                 $update->bind_param("si", $newHash, $id_user);
                 $update->execute();
                 $update->close();
