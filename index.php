@@ -384,7 +384,7 @@ if (!$result_ulasan) {
           <div class="col-md-6 d-flex justify-content-center align-items-center">
             <div class="text-center">
               <h5>HUBUNGI KAMI</h5>
-              <h3>Ayo Diskusi Apa Kek</h3>
+              <h3>Ayo Diskusi Bersama Kami</h3>
               <p>
                 DM Instagram 
                 <a href="https://www.instagram.com/reys_musicstudio" target="_blank" class="text-decoration-none fw-semibold text-primary">

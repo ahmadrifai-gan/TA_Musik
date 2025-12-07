@@ -161,7 +161,7 @@ $slots = [
 }
 .small-muted { 
     font-size: .9rem; 
-    color: #6c757d; 
+    color: #fff; 
 }
 </style>
 <script>
