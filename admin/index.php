@@ -51,6 +51,8 @@
     </div>
 </div>
 
+    
+
     <div class="container-fluid">
         <div class="row">
             <div class="col-lg-6">
@@ -66,6 +68,28 @@
                     <div class="card-body">
                         <h4 class="card-title">Grafik Pendapatan</h4>
                         <canvas id="lineChart" height="220"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tambahkan Dashboard Power BI di sini -->
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Dashboard Power BI</h4>
+                        <div class="powerbi-container">
+                            <iframe 
+                                width="100%" 
+                                height="600" 
+                                src="https://app.powerbi.com/view?r=eyJrIjoiZTYxMGU2NTQtOTY1My00Mzc5LWFlYmUtNDY2NmQzNDc4MGY0IiwidCI6ImE2OWUxOWU4LWYwYTQtNGU3Ny1iZmY2LTk1NjRjODgxOWIxNCJ9" 
+                                frameborder="0" 
+                                allowfullscreen="true">
+                            </iframe>
+                        </div>
                     </div>
                 </div>
             </div>
