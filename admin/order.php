@@ -358,7 +358,7 @@ if (isset($_POST['update_status'])) {
   <div class="container-fluid">
 
     <div class="page-header">
-    <h4>Manajemen Order Online</h4>
+    <h4>Manajemen Order</h4>
 </div>
     <div class="card">
       <div class="table-wrapper">
