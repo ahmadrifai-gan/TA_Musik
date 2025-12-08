@@ -109,6 +109,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Register</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+.password-wrapper {
+    position: relative;
+}
+.password-wrapper input {
+    padding-right: 40px;
+}
+.password-wrapper .toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #6c757d;
+}
+.password-wrapper .toggle-password:hover {
+    color: #000;
+}
+</style>
+
   <style>
     .phone-input-group {
       display: flex;
@@ -148,12 +170,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input type="text" class="form-control" name="username" required value="<?= htmlspecialchars($username) ?>">
           </div>
           <div class="mb-3">
-            <label class="form-label">Password</label>
-            <input type="password" class="form-control" name="password" required>
-          </div>
+    <label class="form-label">Password</label>
+    <div class="password-wrapper">
+        <input type="password" class="form-control" name="password" id="password" required>
+        <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('password', this)"></i>
+    </div>
+</div>
           <div class="mb-3">
             <label class="form-label">Konfirmasi Password</label>
-            <input type="password" class="form-control" name="confirm" required>
+            <div class="password-wrapper">
+        <input type="password" class="form-control" name="confirm" id="confirm" required>
+        <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('confirm', this)"></i>
+    </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Nomor WhatsApp</label>
@@ -197,6 +225,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+function togglePassword(fieldId, icon) {
+    const field = document.getElementById(fieldId);
+
+    if (field.type === "password") {
+        // buka password
+        field.type = "text";
+        icon.classList.remove("bi-eye-slash");
+        icon.classList.add("bi-eye");
+    } else {
+        // tutup password
+        field.type = "password";
+        icon.classList.remove("bi-eye");
+        icon.classList.add("bi-eye-slash");
+    }
+}
   const countryCode = document.getElementById('countryCode');
   const phoneNumber = document.getElementById('phoneNumber');
   const phoneNumberOnly = document.getElementById('phoneNumberOnly');
