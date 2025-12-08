@@ -32,6 +32,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $register_msg = "Format email tidak valid.";
     } elseif ($password !== $confirm) {
         $register_msg = "Konfirmasi password tidak sama!";
+    } elseif (strlen($phone_number_only) < 7) {
+        $register_msg = "Nomor WhatsApp minimal 7 digit.";
+    } elseif (strlen($phone_number_only) > 15) {
+        $register_msg = "Nomor WhatsApp maksimal 15 digit.";
     } else {
         $stmt = $koneksi->prepare("SELECT id_user FROM user WHERE username = ? OR email = ?");
         if ($stmt === false) {
@@ -129,20 +133,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 .password-wrapper .toggle-password:hover {
     color: #000;
 }
+.phone-input-group {
+    display: flex;
+    gap: 10px;
+}
+.country-select {
+    flex: 0 0 140px;
+}
+.phone-number {
+    flex: 1;
+}
+.text-danger {
+    color: #dc3545;
+    font-size: 0.875rem;
+}
+.text-success {
+    color: #198754;
+    font-size: 0.875rem;
+}
 </style>
-
-  <style>
-    .phone-input-group {
-      display: flex;
-      gap: 10px;
-    }
-    .country-select {
-      flex: 0 0 140px;
-    }
-    .phone-number {
-      flex: 1;
-    }
-  </style>
 </head>
 <body class="bg-light">
 
@@ -156,7 +165,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           <div class="alert alert-info py-2"><?= htmlspecialchars($register_msg) ?></div>
         <?php endif; ?>
 
-        <form action="" method="POST">
+        <form action="" method="POST" id="registerForm">
           <div class="mb-3">
             <label class="form-label">Nama Lengkap</label>
             <input type="text" class="form-control" name="nama_lengkap" required value="<?= htmlspecialchars($nama) ?>">
@@ -170,18 +179,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input type="text" class="form-control" name="username" required value="<?= htmlspecialchars($username) ?>">
           </div>
           <div class="mb-3">
-    <label class="form-label">Password</label>
-    <div class="password-wrapper">
-        <input type="password" class="form-control" name="password" id="password" required>
-        <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('password', this)"></i>
-    </div>
-</div>
+            <label class="form-label">Password</label>
+            <div class="password-wrapper">
+                <input type="password" class="form-control" name="password" id="password" required>
+                <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('password', this)"></i>
+            </div>
+          </div>
           <div class="mb-3">
             <label class="form-label">Konfirmasi Password</label>
             <div class="password-wrapper">
-        <input type="password" class="form-control" name="confirm" id="confirm" required>
-        <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('confirm', this)"></i>
-    </div>
+                <input type="password" class="form-control" name="confirm" id="confirm" required>
+                <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('confirm', this)"></i>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Nomor WhatsApp</label>
@@ -211,8 +220,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
               <input type="hidden" name="phone_number_only" id="phoneNumberOnly">
             </div>
             <small class="text-muted">Nomor lengkap: <span id="fullNumber">+62</span></small>
+            <div id="phoneValidation" class="mt-1"></div>
           </div>
-          <button type="submit" class="btn btn-success w-100">Register</button>
+          <button type="submit" class="btn btn-success w-100" id="submitBtn">Register</button>
         </form>
 
         <div class="text-center mt-3">
@@ -229,41 +239,72 @@ function togglePassword(fieldId, icon) {
     const field = document.getElementById(fieldId);
 
     if (field.type === "password") {
-        // buka password
         field.type = "text";
         icon.classList.remove("bi-eye-slash");
         icon.classList.add("bi-eye");
     } else {
-        // tutup password
         field.type = "password";
         icon.classList.remove("bi-eye");
         icon.classList.add("bi-eye-slash");
     }
 }
-  const countryCode = document.getElementById('countryCode');
-  const phoneNumber = document.getElementById('phoneNumber');
-  const phoneNumberOnly = document.getElementById('phoneNumberOnly');
-  const fullNumber = document.getElementById('fullNumber');
-  
-  let lastValidValue = '+62';
 
-  // Update preview nomor lengkap
-  function updateFullNumber() {
+const countryCode = document.getElementById('countryCode');
+const phoneNumber = document.getElementById('phoneNumber');
+const phoneNumberOnly = document.getElementById('phoneNumberOnly');
+const fullNumber = document.getElementById('fullNumber');
+const phoneValidation = document.getElementById('phoneValidation');
+const submitBtn = document.getElementById('submitBtn');
+const registerForm = document.getElementById('registerForm');
+
+let lastValidValue = '+62';
+
+// Validasi panjang nomor telepon
+function validatePhoneLength(numberOnly) {
+    const length = numberOnly.length;
+    
+    if (length === 0) {
+        phoneValidation.innerHTML = '';
+        submitBtn.disabled = false;
+        return true;
+    } else if (length < 7) {
+        phoneValidation.innerHTML = '<span class="text-danger">⚠️ Nomor telepon minimal 7 digit</span>';
+        submitBtn.disabled = true;
+        return false;
+    } else if (length > 15) {
+        phoneValidation.innerHTML = '<span class="text-danger">⚠️ Nomor telepon maksimal 15 digit</span>';
+        submitBtn.disabled = true;
+        return false;
+    } else {
+        phoneValidation.innerHTML = '<span class="text-success">✓ Nomor telepon valid (' + length + ' digit)</span>';
+        submitBtn.disabled = false;
+        return true;
+    }
+}
+
+// Update preview nomor lengkap
+function updateFullNumber() {
     const code = countryCode.value;
     const inputValue = phoneNumber.value;
     
     // Ambil hanya angka setelah kode negara
     const numberOnly = inputValue.slice(code.length).replace(/\D/g, '');
     
+    // Batasi maksimal 15 digit
+    const limitedNumber = numberOnly.slice(0, 15);
+    
     // Update display
-    fullNumber.textContent = code + numberOnly;
+    fullNumber.textContent = code + limitedNumber;
     
     // Update hidden input untuk dikirim ke server (hanya nomor tanpa kode negara)
-    phoneNumberOnly.value = numberOnly;
-  }
+    phoneNumberOnly.value = limitedNumber;
+    
+    // Validasi panjang
+    validatePhoneLength(limitedNumber);
+}
 
-  // Event listener untuk perubahan kode negara
-  countryCode.addEventListener('change', function() {
+// Event listener untuk perubahan kode negara
+countryCode.addEventListener('change', function() {
     const newCode = this.value;
     const currentValue = phoneNumber.value;
     
@@ -280,21 +321,19 @@ function togglePassword(fieldId, icon) {
     // Focus dan taruh cursor di akhir
     phoneNumber.focus();
     phoneNumber.setSelectionRange(phoneNumber.value.length, phoneNumber.value.length);
-  });
-  
-  // Event listener untuk input nomor telepon
-  phoneNumber.addEventListener('input', function(e) {
+});
+
+// Event listener untuk input nomor telepon
+phoneNumber.addEventListener('input', function(e) {
     const code = countryCode.value;
     let value = e.target.value;
     
     // Jika input lebih pendek dari kode negara atau tidak dimulai dengan kode negara
     if (value.length < code.length || !value.startsWith(code)) {
-      // Kembalikan ke nilai terakhir yang valid
-      phoneNumber.value = lastValidValue;
-      // Set cursor di akhir
-      const length = phoneNumber.value.length;
-      phoneNumber.setSelectionRange(length, length);
-      return;
+        phoneNumber.value = lastValidValue;
+        const length = phoneNumber.value.length;
+        phoneNumber.setSelectionRange(length, length);
+        return;
     }
     
     // Ambil bagian nomor (setelah kode negara)
@@ -305,8 +344,11 @@ function togglePassword(fieldId, icon) {
     
     // Hapus angka 0 di awal
     while (numberPart.startsWith('0')) {
-      numberPart = numberPart.substring(1);
+        numberPart = numberPart.substring(1);
     }
+    
+    // Batasi maksimal 15 digit
+    numberPart = numberPart.slice(0, 15);
     
     // Gabungkan kode negara + nomor bersih
     const finalValue = code + numberPart;
@@ -316,62 +358,78 @@ function togglePassword(fieldId, icon) {
     lastValidValue = finalValue;
     
     updateFullNumber();
-  });
+});
 
-  // Prevent user dari menghapus atau mengedit kode negara
-  phoneNumber.addEventListener('keydown', function(e) {
+// Prevent user dari menghapus atau mengedit kode negara
+phoneNumber.addEventListener('keydown', function(e) {
     const code = countryCode.value;
     const cursorPos = e.target.selectionStart;
     const cursorEnd = e.target.selectionEnd;
     
     // Jika ada seleksi yang mencakup kode negara
     if (cursorPos < code.length) {
-      // Hanya izinkan arrow keys, tab, dan shortcut copy
-      const allowedKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End'];
-      
-      if (!allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        // Pindahkan cursor ke akhir kode negara
-        phoneNumber.setSelectionRange(code.length, code.length);
-      }
+        const allowedKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End'];
+        
+        if (!allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            phoneNumber.setSelectionRange(code.length, code.length);
+        }
     }
-  });
+});
 
-  // Saat user klik, pindahkan cursor setelah kode negara jika di area kode
-  phoneNumber.addEventListener('click', function(e) {
+// Saat user klik, pindahkan cursor setelah kode negara jika di area kode
+phoneNumber.addEventListener('click', function(e) {
     const code = countryCode.value;
     const cursorPos = e.target.selectionStart;
     
     if (cursorPos < code.length) {
-      setTimeout(() => {
-        phoneNumber.setSelectionRange(code.length, code.length);
-      }, 0);
+        setTimeout(() => {
+            phoneNumber.setSelectionRange(code.length, code.length);
+        }, 0);
     }
-  });
-  
-  // Prevent select di area kode negara
-  phoneNumber.addEventListener('select', function(e) {
+});
+
+// Prevent select di area kode negara
+phoneNumber.addEventListener('select', function(e) {
     const code = countryCode.value;
     if (e.target.selectionStart < code.length) {
-      e.target.setSelectionRange(code.length, e.target.selectionEnd);
+        e.target.setSelectionRange(code.length, e.target.selectionEnd);
     }
-  });
-  
-  // Saat focus, taruh cursor setelah kode negara
-  phoneNumber.addEventListener('focus', function(e) {
+});
+
+// Saat focus, taruh cursor setelah kode negara
+phoneNumber.addEventListener('focus', function(e) {
     const code = countryCode.value;
     const value = e.target.value;
     
-    // Jika input kosong atau hanya kode negara, set cursor di akhir
     if (value === code) {
-      setTimeout(() => {
-        e.target.setSelectionRange(code.length, code.length);
-      }, 0);
+        setTimeout(() => {
+            e.target.setSelectionRange(code.length, code.length);
+        }, 0);
     }
-  });
+});
 
-  // Set initial value
-  updateFullNumber();
+// Validasi sebelum submit
+registerForm.addEventListener('submit', function(e) {
+    const numberOnly = phoneNumberOnly.value;
+    
+    if (numberOnly.length < 7) {
+        e.preventDefault();
+        alert('Nomor WhatsApp minimal 7 digit!');
+        phoneNumber.focus();
+        return false;
+    }
+    
+    if (numberOnly.length > 15) {
+        e.preventDefault();
+        alert('Nomor WhatsApp maksimal 15 digit!');
+        phoneNumber.focus();
+        return false;
+    }
+});
+
+// Set initial value
+updateFullNumber();
 </script>
 </body>
 </html>
