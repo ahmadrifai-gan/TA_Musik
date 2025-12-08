@@ -25,23 +25,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
     </a>
     
     <!-- Menu Order dengan Submenu -->
-    <div class="menu-item has-submenu">
-      <a href="#" class="menu-link <?= (in_array($current_page, ['order.php', 'order-offline.php', 'order-online.php'])) ? 'active' : '' ?>">
-        <i class="fa-solid fa-cart-shopping"></i>
-        <span class="menu-text">Order</span>
-        <i class="fa-solid fa-chevron-down submenu-arrow"></i>
-      </a>
-      <div class="submenu">
-        <a href="../admin/order.php" class="submenu-link <?= ($current_page == 'order.php') ? 'active' : '' ?>">
-          <i class="fa-solid fa-globe"></i>
-          <span class="menu-text">Online</span>
-        </a>
-        <a href="../admin/order_offline.php" class="submenu-link <?= ($current_page == 'order_offline.php') ? 'active' : '' ?>">
-          <i class="fa-solid fa-store"></i>
-          <span class="menu-text">Offline</span>
-        </a>
-      </div>
-    </div>
+
+    <a href="../admin/order.php" class="<?= ($current_page == 'order.php') ? 'active' : '' ?>">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <span class="menu-text">Order</span>
+    </a>
     
     <a href="../admin/studio.php" class="<?= ($current_page == 'studio.php') ? 'active' : '' ?>">
       <i class="fa-solid fa-music"></i>
