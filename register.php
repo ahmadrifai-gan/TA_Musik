@@ -18,18 +18,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   $password = $_POST['password'] ?? '';
   $confirm = $_POST['confirm'] ?? '';
 
-  if ($nama === '' || $email === '' || $username === '' || $password === '' || $confirm === '' || $phone_number_only === '') {
-    $register_msg = "Semua field wajib diisi.";
-  } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $register_msg = "Format email tidak valid.";
-  } elseif ($password !== $confirm) {
-    $register_msg = "Konfirmasi password tidak sama!";
-  } else {
-    // Cek apakah username atau email sudah terdaftar
-    // PERBAIKAN: Menggunakan $koneksi bukan $con
-    $stmt = $koneksi->prepare("SELECT id_user FROM user WHERE username = ? OR email = ?");
-    if ($stmt === false) {
-      $register_msg = "Gagal menyiapkan statement: " . $koneksi->error;
+    if ($nama === '' || $email === '' || $username === '' || $password === '' || $confirm === '' || $phone_number_only === '') {
+        $register_msg = "Semua field wajib diisi.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $register_msg = "Format email tidak valid.";
+    } elseif ($password !== $confirm) {
+        $register_msg = "Konfirmasi password tidak sama!";
+    } elseif (strlen($phone_number_only) < 7) {
+        $register_msg = "Nomor WhatsApp minimal 7 digit.";
+    } elseif (strlen($phone_number_only) > 15) {
+        $register_msg = "Nomor WhatsApp maksimal 15 digit.";
     } else {
       $stmt->bind_param("ss", $username, $email);
       $stmt->execute();
@@ -158,20 +156,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 .password-wrapper .toggle-password:hover {
     color: #000;
 }
+.phone-input-group {
+    display: flex;
+    gap: 10px;
+}
+.country-select {
+    flex: 0 0 140px;
+}
+.phone-number {
+    flex: 1;
+}
+.text-danger {
+    color: #dc3545;
+    font-size: 0.875rem;
+}
+.text-success {
+    color: #198754;
+    font-size: 0.875rem;
+}
 </style>
-
-  <style>
-    .phone-input-group {
-      display: flex;
-      gap: 10px;
-    }
-    .country-select {
-      flex: 0 0 140px;
-    }
-    .phone-number {
-      flex: 1;
-    }
-  </style>
 </head>
 <body class="bg-light">
   <div class="container py-5">
@@ -184,7 +187,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div class="alert alert-info py-2"><?= htmlspecialchars($register_msg) ?></div>
           <?php endif; ?>
 
-        <form action="" method="POST">
+        <form action="" method="POST" id="registerForm">
           <div class="mb-3">
             <label class="form-label">Nama Lengkap</label>
             <input type="text" class="form-control" name="nama_lengkap" required value="<?= htmlspecialchars($nama) ?>">
@@ -198,18 +201,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input type="text" class="form-control" name="username" required value="<?= htmlspecialchars($username) ?>">
           </div>
           <div class="mb-3">
-    <label class="form-label">Password</label>
-    <div class="password-wrapper">
-        <input type="password" class="form-control" name="password" id="password" required>
-        <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('password', this)"></i>
-    </div>
-</div>
+            <label class="form-label">Password</label>
+            <div class="password-wrapper">
+                <input type="password" class="form-control" name="password" id="password" required>
+                <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('password', this)"></i>
+            </div>
+          </div>
           <div class="mb-3">
             <label class="form-label">Konfirmasi Password</label>
             <div class="password-wrapper">
-        <input type="password" class="form-control" name="confirm" id="confirm" required>
-        <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('confirm', this)"></i>
-    </div>
+                <input type="password" class="form-control" name="confirm" id="confirm" required>
+                <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('confirm', this)"></i>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Nomor WhatsApp</label>
@@ -238,8 +241,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
               <input type="text" class="form-control phone-number" name="phone_number" id="phoneNumber" value="+62" required>
               <input type="hidden" name="phone_number_only" id="phoneNumberOnly">
             </div>
-            <button type="submit" class="btn btn-success w-100">Register</button>
-          </form>
+            <small class="text-muted">Nomor lengkap: <span id="fullNumber">+62</span></small>
+            <div id="phoneValidation" class="mt-1"></div>
+          </div>
+          <button type="submit" class="btn btn-success w-100" id="submitBtn">Register</button>
+        </form>
 
           <div class="text-center mt-3">
             <small>Sudah punya akun? <a href="login.php">Login</a></small>
@@ -261,12 +267,10 @@ function togglePassword(fieldId, icon) {
     const field = document.getElementById(fieldId);
 
     if (field.type === "password") {
-        // buka password
         field.type = "text";
         icon.classList.remove("bi-eye-slash");
         icon.classList.add("bi-eye");
     } else {
-        // tutup password
         field.type = "password";
         icon.classList.remove("bi-eye");
         icon.classList.add("bi-eye-slash");

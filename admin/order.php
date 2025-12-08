@@ -340,7 +340,7 @@ if (isset($_POST['update_status'])) {
     .pagination-info {
       text-align: center;
       margin-bottom: 10px;
-    }
+    }   
 
     .pagination {
       flex-wrap: wrap;
@@ -352,6 +352,33 @@ if (isset($_POST['update_status'])) {
       font-size: 13px;
     }
   }
+
+/* ==========================
+   Filter input (ID Order)
+   ========================== */
+   #filter_id {
+  max-width: 220px;   /* ubah 180 / 200 / 250 sesuai preferensi */
+  width: 100%;
+  display: inline-block; /* supaya tidak memaksa full-width container */
+}
+
+/* versi mobile: lebih sempit agar tidak terlalu besar */
+@media (max-width: 576px) {
+  #filter_id {
+    max-width: 160px;
+  }
+}
+
+/* opsional: beri sedikit jarak kanan bila mau tombol di samping */
+.filter-wrap {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.filter-form {
+    max-width: 250px;    /* ubah sesuai kebutuhan: 280, 300, 400, dll */
+}
+
 </style>
 
 <div class="content-body">
@@ -360,13 +387,28 @@ if (isset($_POST['update_status'])) {
     <div class="page-header">
     <h4>Manajemen Order</h4>
 </div>
-    <div class="card">
-      <div class="table-wrapper">
+    <!-- Form Filter dipisah dari tabel -->
+    <form method="GET" class="filter-form p-3 mb-3" 
+      style="background:white; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+  <div class="filter-wrap">
+    <input type="text" inputmode="numeric" pattern="\d*" 
+           name="filter_id" id="filter_id" class="form-control"
+           placeholder="Cari ID Order..." 
+           value="<?= isset($_GET['filter_id']) ? $_GET['filter_id'] : '' ?>">
+  </div>
+</form>
+<script>
+let timer;
+document.getElementById("filter_id").addEventListener("input", function () {
+    clearTimeout(timer);
+    timer = setTimeout(() => { this.form.submit(); }, 750);
+});
+</script>
         <div class="table-responsive">
           <table class="table">
             <thead>
               <tr>
-                <th>No</th>
+                <th>ID Order</th>
                 <th>Nama Pelanggan</th>
                 <th>Studio</th>
                 <th>Tanggal</th>
@@ -383,12 +425,19 @@ if (isset($_POST['update_status'])) {
               $per_page = 10;
               
               // Get total records first
-              $count_query = "
-                SELECT COUNT(*) as total
-                FROM booking b
-                JOIN user u ON b.id_user = u.id_user
-                JOIN studio s ON b.id_studio = s.id_studio
-              ";
+              $filter = "";
+if (!empty($_GET['filter_id'])) {
+    $fid = mysqli_real_escape_string($koneksi, $_GET['filter_id']);
+    $filter = " WHERE b.id_order = '$fid' ";
+}
+
+$count_query = "
+  SELECT COUNT(*) as total
+  FROM booking b
+  JOIN user u ON b.id_user = u.id_user
+  JOIN studio s ON b.id_studio = s.id_studio
+  $filter
+";
               $count_result = mysqli_query($koneksi, $count_query);
               $total_records = mysqli_fetch_assoc($count_result)['total'];
               $total_pages = ceil($total_records / $per_page);
@@ -405,32 +454,32 @@ if (isset($_POST['update_status'])) {
 
               // Query dengan pagination
               $query = "
-                SELECT 
-                  b.id_order,
-                  b.id_studio,
-                  u.nama_lengkap AS nama_user,
-                  s.nama AS nama_studio,
-                  b.Tanggal,
-                  b.jam_booking,
-                  b.total_tagihan,
-                  b.status,
-                  b.status_pembayaran,
-                  b.bukti_dp
-                FROM booking b
-                JOIN user u ON b.id_user = u.id_user
-                JOIN studio s ON b.id_studio = s.id_studio
-                ORDER BY b.id_order DESC
-                LIMIT $per_page OFFSET $offset
-              ";
+  SELECT 
+    b.id_order,
+    b.id_studio,
+    u.nama_lengkap AS nama_user,
+    s.nama AS nama_studio,
+    b.Tanggal,
+    b.jam_booking,
+    b.total_tagihan,
+    b.status,
+    b.status_pembayaran,
+    b.bukti_dp
+  FROM booking b
+  JOIN user u ON b.id_user = u.id_user
+  JOIN studio s ON b.id_studio = s.id_studio
+  $filter
+  ORDER BY b.id_order DESC
+  LIMIT $per_page OFFSET $offset
+";
                $result = mysqli_query($koneksi, $query);
-              $no = 1;
               if (mysqli_num_rows($result) > 0):
                 while ($row = mysqli_fetch_assoc($result)):
                   // Format tanggal
                   $tanggal = date('Y-m-d', strtotime($row['Tanggal']));
               ?>
               <tr>
-                <td><?= $no++ ?></td>
+                <td><span style="font-weight: 700; color: #4B0082; font-size: 1rem;">#<?= htmlspecialchars($row['id_order']) ?></span></td>
                 <td><?= htmlspecialchars($row['nama_user']) ?></td>
                 <td><?= htmlspecialchars($row['nama_studio']) ?></td>
                 <td><?= $tanggal ?></td>
