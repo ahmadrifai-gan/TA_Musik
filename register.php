@@ -213,7 +213,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           </div>
           <div class="mb-3">
             <label class="form-label">Nomor WhatsApp</label>
-            <div class="phone-input-group">
+            <div class="phone-input-group mb-3">
               <select class="form-select country-select" name="country_code" id="countryCode" required>
                 <option value="+62" selected>🇮🇩 Indonesia (+62)</option>
                 <option value="+60">🇲🇾 Malaysia (+60)</option>
@@ -237,51 +237,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
               </select>
               <input type="text" class="form-control phone-number" name="phone_number" id="phoneNumber" value="+62" required>
               <input type="hidden" name="phone_number_only" id="phoneNumberOnly">
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-control" name="email" required value="<?= htmlspecialchars($email) ?>">
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Username</label>
-              <input type="text" class="form-control" name="username" required value="<?= htmlspecialchars($username) ?>">
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Password</label>
-              <input type="password" class="form-control" name="password" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Konfirmasi Password</label>
-              <input type="password" class="form-control" name="confirm" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Nomor WhatsApp</label>
-              <div class="phone-input-group">
-                <select class="form-select country-select" name="country_code" id="countryCode" required>
-                  <option value="+62" selected>🇮🇩 Indonesia (+62)</option>
-                  <option value="+60">🇲🇾 Malaysia (+60)</option>
-                  <option value="+65">🇸🇬 Singapore (+65)</option>
-                  <option value="+66">🇹🇭 Thailand (+66)</option>
-                  <option value="+63">🇵🇭 Philippines (+63)</option>
-                  <option value="+84">🇻🇳 Vietnam (+84)</option>
-                  <option value="+95">🇲🇲 Myanmar (+95)</option>
-                  <option value="+673">🇧🇳 Brunei (+673)</option>
-                  <option value="+856">🇱🇦 Laos (+856)</option>
-                  <option value="+855">🇰🇭 Cambodia (+855)</option>
-                  <option value="+1">🇺🇸 USA (+1)</option>
-                  <option value="+44">🇬🇧 UK (+44)</option>
-                  <option value="+61">🇦🇺 Australia (+61)</option>
-                  <option value="+81">🇯🇵 Japan (+81)</option>
-                  <option value="+82">🇰🇷 South Korea (+82)</option>
-                  <option value="+86">🇨🇳 China (+86)</option>
-                  <option value="+91">🇮🇳 India (+91)</option>
-                  <option value="+971">🇦🇪 UAE (+971)</option>
-                  <option value="+966">🇸🇦 Saudi Arabia (+966)</option>
-                </select>
-                <input type="text" class="form-control phone-number" name="phone_number" id="phoneNumber" value="+62" required>
-                <input type="hidden" name="phone_number_only" id="phoneNumberOnly">
-              </div>
-              <small class="text-muted">Nomor lengkap: <span id="fullNumber">+62</span></small>
             </div>
             <button type="submit" class="btn btn-success w-100">Register</button>
           </form>
