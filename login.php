@@ -66,6 +66,25 @@ $koneksi->close();
   <title>Login</title>
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .password-wrapper {
+      position: relative;
+    }
+    .password-wrapper .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #6c757d;
+      font-size: 1.2rem;
+      user-select: none;
+    }
+    .password-wrapper .toggle-password:hover {
+      color: #495057;
+    }
+  </style>
 </head>
 <body class="bg-light d-flex align-items-center justify-content-center vh-100">
 
@@ -82,9 +101,12 @@ $koneksi->close();
         <input type="text" class="form-control" name="username" id="username" placeholder="Masukkan username" required>
       </div>
       <div class="mb-3">
-        <label for="password" class="form-label">Password</label>
-        <input type="password" class="form-control" name="password" id="password" placeholder="Masukkan password" required>
-      </div>
+  <label for="password" class="form-label">Password</label>
+  <div class="password-wrapper">
+    <input type="password" class="form-control" name="password" id="password" placeholder="Masukkan password" required>
+    <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('password', this)"></i>
+  </div>
+</div>
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="form-check">
           <input class="form-check-input" type="checkbox" id="rememberMe">
@@ -129,5 +151,22 @@ $koneksi->close();
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+function togglePassword(fieldId, icon) {
+    const field = document.getElementById(fieldId);
+
+    if (field.type === "password") {
+        // buka password
+        field.type = "text";
+        icon.classList.remove("bi-eye-slash");
+        icon.classList.add("bi-eye");
+    } else {
+        // tutup password
+        field.type = "password";
+        icon.classList.remove("bi-eye");
+        icon.classList.add("bi-eye-slash");
+    }
+}
+</script>
 </body>
 </html>

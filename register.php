@@ -138,6 +138,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Register - Reys Studio</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+.password-wrapper {
+    position: relative;
+}
+.password-wrapper input {
+    padding-right: 40px;
+}
+.password-wrapper .toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #6c757d;
+}
+.password-wrapper .toggle-password:hover {
+    color: #000;
+}
+</style>
+
   <style>
     .phone-input-group {
       display: flex;
@@ -162,10 +184,59 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div class="alert alert-info py-2"><?= htmlspecialchars($register_msg) ?></div>
           <?php endif; ?>
 
-          <form action="" method="POST">
-            <div class="mb-3">
-              <label class="form-label">Nama Lengkap</label>
-              <input type="text" class="form-control" name="nama_lengkap" required value="<?= htmlspecialchars($nama) ?>">
+        <form action="" method="POST">
+          <div class="mb-3">
+            <label class="form-label">Nama Lengkap</label>
+            <input type="text" class="form-control" name="nama_lengkap" required value="<?= htmlspecialchars($nama) ?>">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" required value="<?= htmlspecialchars($email) ?>">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-control" name="username" required value="<?= htmlspecialchars($username) ?>">
+          </div>
+          <div class="mb-3">
+    <label class="form-label">Password</label>
+    <div class="password-wrapper">
+        <input type="password" class="form-control" name="password" id="password" required>
+        <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('password', this)"></i>
+    </div>
+</div>
+          <div class="mb-3">
+            <label class="form-label">Konfirmasi Password</label>
+            <div class="password-wrapper">
+        <input type="password" class="form-control" name="confirm" id="confirm" required>
+        <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('confirm', this)"></i>
+    </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nomor WhatsApp</label>
+            <div class="phone-input-group">
+              <select class="form-select country-select" name="country_code" id="countryCode" required>
+                <option value="+62" selected>🇮🇩 Indonesia (+62)</option>
+                <option value="+60">🇲🇾 Malaysia (+60)</option>
+                <option value="+65">🇸🇬 Singapore (+65)</option>
+                <option value="+66">🇹🇭 Thailand (+66)</option>
+                <option value="+63">🇵🇭 Philippines (+63)</option>
+                <option value="+84">🇻🇳 Vietnam (+84)</option>
+                <option value="+95">🇲🇲 Myanmar (+95)</option>
+                <option value="+673">🇧🇳 Brunei (+673)</option>
+                <option value="+856">🇱🇦 Laos (+856)</option>
+                <option value="+855">🇰🇭 Cambodia (+855)</option>
+                <option value="+1">🇺🇸 USA (+1)</option>
+                <option value="+44">🇬🇧 UK (+44)</option>
+                <option value="+61">🇦🇺 Australia (+61)</option>
+                <option value="+81">🇯🇵 Japan (+81)</option>
+                <option value="+82">🇰🇷 South Korea (+82)</option>
+                <option value="+86">🇨🇳 China (+86)</option>
+                <option value="+91">🇮🇳 India (+91)</option>
+                <option value="+971">🇦🇪 UAE (+971)</option>
+                <option value="+966">🇸🇦 Saudi Arabia (+966)</option>
+              </select>
+              <input type="text" class="form-control phone-number" name="phone_number" id="phoneNumber" value="+62" required>
+              <input type="hidden" name="phone_number_only" id="phoneNumberOnly">
             </div>
             <div class="mb-3">
               <label class="form-label">Email</label>
@@ -229,6 +300,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     const phoneNumber = document.getElementById('phoneNumber');
     const phoneNumberOnly = document.getElementById('phoneNumberOnly');
     const fullNumber = document.getElementById('fullNumber');
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function togglePassword(fieldId, icon) {
+    const field = document.getElementById(fieldId);
+
+    if (field.type === "password") {
+        // buka password
+        field.type = "text";
+        icon.classList.remove("bi-eye-slash");
+        icon.classList.add("bi-eye");
+    } else {
+        // tutup password
+        field.type = "password";
+        icon.classList.remove("bi-eye");
+        icon.classList.add("bi-eye-slash");
+    }
+}
+  const countryCode = document.getElementById('countryCode');
+  const phoneNumber = document.getElementById('phoneNumber');
+  const phoneNumberOnly = document.getElementById('phoneNumberOnly');
+  const fullNumber = document.getElementById('fullNumber');
+  
+  let lastValidValue = '+62';
 
     let lastValidValue = '+62';
 
