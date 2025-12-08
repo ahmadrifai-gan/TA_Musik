@@ -2,29 +2,21 @@
 session_start();
 require "config/koneksi.php";
 
-// Pastikan koneksi berhasil
-if (!$koneksi) {
-    die("Koneksi gagal: " . mysqli_connect_error());
-}
+// Set timezone ke Asia/Jakarta
+date_default_timezone_set('Asia/Jakarta');
 
 $register_msg = "";
 $nama = $email = $username = $whatsapp = "";
 
-// === Load PHPMailer via Composer ===
-require __DIR__ . '/vendor/autoload.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $nama = trim($_POST['nama_lengkap'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $username = trim($_POST['username'] ?? '');
-    $country_code = trim($_POST['country_code'] ?? '');
-    $phone_number_only = trim($_POST['phone_number_only'] ?? '');
-    $whatsapp = $country_code . $phone_number_only; // Gabungkan kode negara + nomor
-    $password = $_POST['password'] ?? '';
-    $confirm  = $_POST['confirm'] ?? '';
+  $nama = trim($_POST['nama_lengkap'] ?? '');
+  $email = trim($_POST['email'] ?? '');
+  $username = trim($_POST['username'] ?? '');
+  $country_code = trim($_POST['country_code'] ?? '');
+  $phone_number_only = trim($_POST['phone_number_only'] ?? '');
+  $whatsapp = $country_code . $phone_number_only;
+  $password = $_POST['password'] ?? '';
+  $confirm = $_POST['confirm'] ?? '';
 
     if ($nama === '' || $email === '' || $username === '' || $password === '' || $confirm === '' || $phone_number_only === '') {
         $register_msg = "Semua field wajib diisi.";
@@ -37,81 +29,112 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } elseif (strlen($phone_number_only) > 15) {
         $register_msg = "Nomor WhatsApp maksimal 15 digit.";
     } else {
-        $stmt = $koneksi->prepare("SELECT id_user FROM user WHERE username = ? OR email = ?");
-        if ($stmt === false) {
-            $register_msg = "Gagal menyiapkan statement: " . $koneksi->error;
+      $stmt->bind_param("ss", $username, $email);
+      $stmt->execute();
+      $stmt->store_result();
+
+      if ($stmt->num_rows > 0) {
+        $register_msg = "Username atau email sudah terdaftar!";
+      } else {
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $verification_code = sprintf("%06d", mt_rand(1, 999999));
+        
+        // Set default role sebagai 'user'
+        $role = 'user';
+        $reset_token = "";
+        $is_verified = 0;
+
+        // Insert data ke tabel user
+        // PERBAIKAN: Menggunakan $koneksi bukan $con
+        $insert = $koneksi->prepare("INSERT INTO user (nama_lengkap, username, password, email, whatsapp, role, reset_token, is_verified, verification_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        if ($insert === false) {
+          $register_msg = "Gagal menyiapkan insert: " . $koneksi->error;
         } else {
-            $stmt->bind_param("ss", $username, $email);
-            $stmt->execute();
-            $stmt->store_result();
+          $insert->bind_param("sssssssis", $nama, $username, $hash, $email, $whatsapp, $role, $reset_token, $is_verified, $verification_code);
 
-            if ($stmt->num_rows > 0) {
-                $register_msg = "Username atau email sudah terdaftar!";
+          if ($insert->execute()) {
+            // Set session untuk verifikasi
+            $_SESSION['verify_email'] = $email;
+            $_SESSION['verify_user_id'] = $koneksi->insert_id; // PERBAIKAN: $koneksi->insert_id
+
+            // Kirim email verifikasi
+            $subject = 'Kode Verifikasi Email - Reys Studio';
+
+            // HTML Email content
+            $message = '
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; color: #333; background: #f5f5f5; padding: 20px; }
+                    .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 10px; overflow: hidden; }
+                    .header { background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 30px; text-align: center; }
+                    .content { padding: 30px; }
+                    .code { font-size: 32px; font-weight: bold; color: #1976d2; text-align: center; margin: 20px 0; letter-spacing: 8px; }
+                    .footer { background: #f5f5f5; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+                    .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 15px 0; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Reys Studio</h1>
+                        <p>Verifikasi Email Anda</p>
+                    </div>
+                    <div class="content">
+                        <p>Halo <strong>' . htmlspecialchars($nama) . '</strong>,</p>
+                        <p>Terima kasih telah mendaftar di Reys Studio. Untuk mengaktifkan akun Anda, silakan masukkan kode verifikasi berikut:</p>
+                        <div class="code">' . $verification_code . '</div>
+                        <p>Kode ini berlaku selama 1 jam.</p>
+                        <div class="warning">
+                            <p><strong>⚠ Kode ini berlaku selama 1 jam.</strong></p>
+                        </div>
+                        <p>Silakan masukkan kode ini pada halaman verifikasi untuk mengaktifkan akun Anda.</p>
+                        <p>Jika Anda tidak merasa mendaftar, abaikan email ini.</p>
+                    </div>
+                    <div class="footer">
+                        <p>&copy; ' . date('Y') . ' Reys Studio. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            ';
+
+            // Headers untuk HTML email
+            $headers = "MIME-Version: 1.0" . "\r\n";
+            $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+            $headers .= 'From: Reys Studio <noreply@reysmusicstudio.mif.myhost.id>' . "\r\n";
+            $headers .= 'Reply-To: noreply@reysmusicstudio.mif.myhost.id' . "\r\n";
+            $headers .= 'X-Mailer: PHP/' . phpversion();
+
+            // Kirim email menggunakan PHP mail()
+            if (mail($email, $subject, $message, $headers)) {
+                // Redirect ke halaman verify
+                header("Location: verifikasi.php");
+                exit();
             } else {
-                $hash = password_hash($password, PASSWORD_DEFAULT);
-                $verification_code = rand(100000, 999999);
-
-                // Tambahkan reset_token jika diperlukan oleh tabel
-                $reset_token = ""; // Atau gunakan bin2hex(random_bytes(16)) untuk token acak
-                $insert = $koneksi->prepare("INSERT INTO user (nama_lengkap, username, password, email, whatsapp, verification_code, is_verified, reset_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                if ($insert === false) {
-                    $register_msg = "Gagal menyiapkan insert: " . $koneksi->error;
-                } else {
-                    $is_verified = 0; // 0 = belum terverifikasi, 1 = sudah terverifikasi
-                    $insert->bind_param("ssssssis", $nama, $username, $hash, $email, $whatsapp, $verification_code, $is_verified, $reset_token);
-
-                    if ($insert->execute()) {
-                        // kirim email
-                        $mail = new PHPMailer(true);
-                        try {
-                            $mail->isSMTP();
-                            $mail->Host       = 'smtp.gmail.com';
-                            $mail->SMTPAuth   = true;
-                            $mail->Username   = 'nisrinafirdaus02@gmail.com'; // ganti dengan email Anda
-                            $mail->Password   = 'lurk svtg ihli uyhr';     // ganti dengan App Password Gmail
-                            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                            $mail->Port       = 587;
-
-                            $mail->setFrom('nisrinafirdaus02@gmail.com', 'Admin Reys Studio Music');
-                            $mail->addAddress($email, $nama);
-
-                            $mail->isHTML(true);
-                            $mail->Subject = 'Kode Verifikasi Akun Anda';
-                            $mail->Body    = "
-                                <h3>Halo, $nama</h3>
-                                <p>Terima kasih telah mendaftar. Berikut kode verifikasi akun Anda:</p>
-                                <h2 style='color:green;'>$verification_code</h2>
-                                <p>Masukkan kode ini di halaman <a href='http://localhost/verifikasi.php'>verifikasi</a> untuk mengaktifkan akun.</p>
-                            ";
-
-                            $mail->send();
-
-                            // === Redirect ke halaman verifikasi dengan email sebagai parameter ===
-                            header("Location: verifikasi.php?email=" . urlencode($email));
-                            exit;
-
-                        } catch (Exception $e) {
-                            $register_msg = "Registrasi berhasil, tapi gagal mengirim email. Error: {$mail->ErrorInfo}";
-                        }
-                    } else {
-                        $register_msg = "Gagal menyimpan data: " . $koneksi->error;
-                    }
-                    $insert->close();
-                }
+                // Jika email gagal, tetap redirect ke verify dengan info
+                header("Location: verifikasi.php?email_failed=1");
+                exit();
             }
-            $stmt->close();
+          } else {
+            $register_msg = "Gagal menyimpan data: " . $koneksi->error; // PERBAIKAN: $koneksi->error
+          }
+          $insert->close();
         }
+      }
+      $stmt->close();
     }
+  }
 }
-// mysqli_close($koneksi); // Tutup koneksi jika tidak diperlukan lagi
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - Reys Studio</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <style>
@@ -154,16 +177,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </style>
 </head>
 <body class="bg-light">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="card shadow p-4" style="border-radius:1rem;">
+          <h3 class="text-center mb-4">Register - Reys Studio</h3>
 
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-      <div class="card shadow p-4" style="border-radius:1rem;">
-        <h3 class="text-center mb-4">Register</h3>
-
-        <?php if ($register_msg): ?>
-          <div class="alert alert-info py-2"><?= htmlspecialchars($register_msg) ?></div>
-        <?php endif; ?>
+          <?php if ($register_msg): ?>
+            <div class="alert alert-info py-2"><?= htmlspecialchars($register_msg) ?></div>
+          <?php endif; ?>
 
         <form action="" method="POST" id="registerForm">
           <div class="mb-3">
@@ -194,7 +216,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           </div>
           <div class="mb-3">
             <label class="form-label">Nomor WhatsApp</label>
-            <div class="phone-input-group">
+            <div class="phone-input-group mb-3">
               <select class="form-select country-select" name="country_code" id="countryCode" required>
                 <option value="+62" selected>🇮🇩 Indonesia (+62)</option>
                 <option value="+60">🇲🇾 Malaysia (+60)</option>
@@ -225,14 +247,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           <button type="submit" class="btn btn-success w-100" id="submitBtn">Register</button>
         </form>
 
-        <div class="text-center mt-3">
-          <small>Sudah punya akun? <a href="login.php">Login</a></small>
+          <div class="text-center mt-3">
+            <small>Sudah punya akun? <a href="login.php">Login</a></small>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const countryCode = document.getElementById('countryCode');
+    const phoneNumber = document.getElementById('phoneNumber');
+    const phoneNumberOnly = document.getElementById('phoneNumberOnly');
+    const fullNumber = document.getElementById('fullNumber');
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 function togglePassword(fieldId, icon) {
@@ -248,188 +276,89 @@ function togglePassword(fieldId, icon) {
         icon.classList.add("bi-eye-slash");
     }
 }
+  const countryCode = document.getElementById('countryCode');
+  const phoneNumber = document.getElementById('phoneNumber');
+  const phoneNumberOnly = document.getElementById('phoneNumberOnly');
+  const fullNumber = document.getElementById('fullNumber');
+  
+  let lastValidValue = '+62';
 
-const countryCode = document.getElementById('countryCode');
-const phoneNumber = document.getElementById('phoneNumber');
-const phoneNumberOnly = document.getElementById('phoneNumberOnly');
-const fullNumber = document.getElementById('fullNumber');
-const phoneValidation = document.getElementById('phoneValidation');
-const submitBtn = document.getElementById('submitBtn');
-const registerForm = document.getElementById('registerForm');
+    let lastValidValue = '+62';
 
-let lastValidValue = '+62';
-
-// Validasi panjang nomor telepon
-function validatePhoneLength(numberOnly) {
-    const length = numberOnly.length;
-    
-    if (length === 0) {
-        phoneValidation.innerHTML = '';
-        submitBtn.disabled = false;
-        return true;
-    } else if (length < 7) {
-        phoneValidation.innerHTML = '<span class="text-danger">⚠️ Nomor telepon minimal 7 digit</span>';
-        submitBtn.disabled = true;
-        return false;
-    } else if (length > 15) {
-        phoneValidation.innerHTML = '<span class="text-danger">⚠️ Nomor telepon maksimal 15 digit</span>';
-        submitBtn.disabled = true;
-        return false;
-    } else {
-        phoneValidation.innerHTML = '<span class="text-success">✓ Nomor telepon valid (' + length + ' digit)</span>';
-        submitBtn.disabled = false;
-        return true;
+    function updateFullNumber() {
+      const code = countryCode.value;
+      const inputValue = phoneNumber.value;
+      const numberOnly = inputValue.slice(code.length).replace(/\D/g, '');
+      fullNumber.textContent = code + numberOnly;
+      phoneNumberOnly.value = numberOnly;
     }
-}
 
-// Update preview nomor lengkap
-function updateFullNumber() {
-    const code = countryCode.value;
-    const inputValue = phoneNumber.value;
-    
-    // Ambil hanya angka setelah kode negara
-    const numberOnly = inputValue.slice(code.length).replace(/\D/g, '');
-    
-    // Batasi maksimal 15 digit
-    const limitedNumber = numberOnly.slice(0, 15);
-    
-    // Update display
-    fullNumber.textContent = code + limitedNumber;
-    
-    // Update hidden input untuk dikirim ke server (hanya nomor tanpa kode negara)
-    phoneNumberOnly.value = limitedNumber;
-    
-    // Validasi panjang
-    validatePhoneLength(limitedNumber);
-}
+    countryCode.addEventListener('change', function () {
+      const newCode = this.value;
+      const oldCode = lastValidValue.match(/^\+\d+/)[0];
+      const numberOnly = phoneNumber.value.slice(oldCode.length).replace(/\D/g, '');
+      phoneNumber.value = newCode + numberOnly;
+      lastValidValue = phoneNumber.value;
+      updateFullNumber();
+      phoneNumber.focus();
+      phoneNumber.setSelectionRange(phoneNumber.value.length, phoneNumber.value.length);
+    });
 
-// Event listener untuk perubahan kode negara
-countryCode.addEventListener('change', function() {
-    const newCode = this.value;
-    const currentValue = phoneNumber.value;
-    
-    // Ambil nomor tanpa kode negara lama
-    const oldCode = lastValidValue.match(/^\+\d+/)[0];
-    const numberOnly = currentValue.slice(oldCode.length).replace(/\D/g, '');
-    
-    // Set input value dengan kode negara baru
-    phoneNumber.value = newCode + numberOnly;
-    lastValidValue = phoneNumber.value;
-    
-    updateFullNumber();
-    
-    // Focus dan taruh cursor di akhir
-    phoneNumber.focus();
-    phoneNumber.setSelectionRange(phoneNumber.value.length, phoneNumber.value.length);
-});
-
-// Event listener untuk input nomor telepon
-phoneNumber.addEventListener('input', function(e) {
-    const code = countryCode.value;
-    let value = e.target.value;
-    
-    // Jika input lebih pendek dari kode negara atau tidak dimulai dengan kode negara
-    if (value.length < code.length || !value.startsWith(code)) {
+    phoneNumber.addEventListener('input', function (e) {
+      const code = countryCode.value;
+      let value = e.target.value;
+      
+      if (value.length < code.length || !value.startsWith(code)) {
         phoneNumber.value = lastValidValue;
         const length = phoneNumber.value.length;
         phoneNumber.setSelectionRange(length, length);
         return;
-    }
-    
-    // Ambil bagian nomor (setelah kode negara)
-    let numberPart = value.slice(code.length);
-    
-    // Hanya izinkan angka
-    numberPart = numberPart.replace(/\D/g, '');
-    
-    // Hapus angka 0 di awal
-    while (numberPart.startsWith('0')) {
+      }
+
+      let numberPart = value.slice(code.length);
+      numberPart = numberPart.replace(/\D/g, '');
+      while (numberPart.startsWith('0')) {
         numberPart = numberPart.substring(1);
-    }
-    
-    // Batasi maksimal 15 digit
-    numberPart = numberPart.slice(0, 15);
-    
-    // Gabungkan kode negara + nomor bersih
-    const finalValue = code + numberPart;
-    
-    // Set nilai input
-    phoneNumber.value = finalValue;
-    lastValidValue = finalValue;
-    
-    updateFullNumber();
-});
+      }
+      const finalValue = code + numberPart;
+      phoneNumber.value = finalValue;
+      lastValidValue = finalValue;
+      updateFullNumber();
+    });
 
-// Prevent user dari menghapus atau mengedit kode negara
-phoneNumber.addEventListener('keydown', function(e) {
-    const code = countryCode.value;
-    const cursorPos = e.target.selectionStart;
-    const cursorEnd = e.target.selectionEnd;
-    
-    // Jika ada seleksi yang mencakup kode negara
-    if (cursorPos < code.length) {
+    phoneNumber.addEventListener('keydown', function (e) {
+      const code = countryCode.value;
+      const cursorPos = e.target.selectionStart;
+      if (cursorPos < code.length) {
         const allowedKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End'];
-        
         if (!allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            phoneNumber.setSelectionRange(code.length, code.length);
+          e.preventDefault();
+          phoneNumber.setSelectionRange(code.length, code.length);
         }
-    }
-});
+      }
+    });
 
-// Saat user klik, pindahkan cursor setelah kode negara jika di area kode
-phoneNumber.addEventListener('click', function(e) {
-    const code = countryCode.value;
-    const cursorPos = e.target.selectionStart;
-    
-    if (cursorPos < code.length) {
+    phoneNumber.addEventListener('click', function (e) {
+      const code = countryCode.value;
+      const cursorPos = e.target.selectionStart;
+      if (cursorPos < code.length) {
         setTimeout(() => {
-            phoneNumber.setSelectionRange(code.length, code.length);
+          phoneNumber.setSelectionRange(code.length, code.length);
         }, 0);
-    }
-});
+      }
+    });
 
-// Prevent select di area kode negara
-phoneNumber.addEventListener('select', function(e) {
-    const code = countryCode.value;
-    if (e.target.selectionStart < code.length) {
-        e.target.setSelectionRange(code.length, e.target.selectionEnd);
-    }
-});
-
-// Saat focus, taruh cursor setelah kode negara
-phoneNumber.addEventListener('focus', function(e) {
-    const code = countryCode.value;
-    const value = e.target.value;
-    
-    if (value === code) {
+    phoneNumber.addEventListener('focus', function (e) {
+      const code = countryCode.value;
+      const value = e.target.value;
+      if (value === code) {
         setTimeout(() => {
-            e.target.setSelectionRange(code.length, code.length);
+          e.target.setSelectionRange(code.length, code.length);
         }, 0);
-    }
-});
+      }
+    });
 
-// Validasi sebelum submit
-registerForm.addEventListener('submit', function(e) {
-    const numberOnly = phoneNumberOnly.value;
-    
-    if (numberOnly.length < 7) {
-        e.preventDefault();
-        alert('Nomor WhatsApp minimal 7 digit!');
-        phoneNumber.focus();
-        return false;
-    }
-    
-    if (numberOnly.length > 15) {
-        e.preventDefault();
-        alert('Nomor WhatsApp maksimal 15 digit!');
-        phoneNumber.focus();
-        return false;
-    }
-});
-
-// Set initial value
-updateFullNumber();
-</script>
+    updateFullNumber();
+  </script>
 </body>
 </html>

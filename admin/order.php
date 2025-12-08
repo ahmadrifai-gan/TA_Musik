@@ -385,7 +385,7 @@ if (isset($_POST['update_status'])) {
   <div class="container-fluid">
 
     <div class="page-header">
-    <h4>Manajemen Order Online</h4>
+    <h4>Manajemen Order</h4>
 </div>
     <!-- Form Filter dipisah dari tabel -->
     <form method="GET" class="filter-form p-3 mb-3" 
