@@ -11,13 +11,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
-// Default paket
-$paketOptions = [
-    ['value' => 'paket-bronze', 'label' => 'Paket Bronze', 'price' => 500000],
-    ['value' => 'paket-silver', 'label' => 'Paket Silver', 'price' => 1000000],
-    ['value' => 'paket-gold', 'label' => 'Paket Gold', 'price' => 2000000],
-    ['value' => 'paket-platinum', 'label' => 'Paket Platinum', 'price' => 3500000]
-];
+// Paket akan dimuat dinamis berdasarkan studio yang dipilih
+$paketOptions = [];
 
 // Ambil tanggal tersedia dari DB
 $tanggalTersedia = [];
@@ -619,6 +614,19 @@ $paketOptions = is_array($paketOptions) ? $paketOptions : [];
 
               <div class="form-group">
                 <label class="form-label">
+                  Pilih Paket <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <select name="paket" id="paket" class="form-select" required disabled>
+                    <option value="">-- Pilih Studio Terlebih Dahulu --</option>
+                  </select>
+                  <i class="fas fa-box input-icon"></i>
+                </div>
+                <small style="font-size: 0.8rem; color: #6b7280;">Pilih studio terlebih dahulu untuk melihat paket yang tersedia.</small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
                   Pilih Tanggal <span class="required">*</span>
                 </label>
                 <div class="input-wrapper">
@@ -653,26 +661,10 @@ $paketOptions = is_array($paketOptions) ? $paketOptions : [];
                 </div>
                 <input type="hidden" name="jadwal_id" id="jadwalId" required>
                 <input type="hidden" name="jam_booking" id="jamBooking">
-                <small style="font-size: 0.8rem; color: #6b7280; display:block; margin-top:0.25rem;">Klik salah satu jam yang tersedia untuk memilih jadwal.</small>
+                <input type="hidden" id="selectedJadwalIds" name="selected_jadwal_ids">
+                <small id="jamInfo" style="font-size: 0.8rem; color: #6b7280; display:block; margin-top:0.25rem;">Pilih studio, tanggal, dan paket terlebih dahulu untuk melihat jadwal yang tersedia.</small>
               </div>
 
-              <div class="form-group">
-                <label class="form-label">
-                  Pilih Paket <span class="required">*</span>
-                </label>
-                <div class="input-wrapper">
-                  <select name="paket" id="paket" class="form-select" required>
-                    <option value="">-- Pilih Paket --</option>
-                    <?php foreach ($paketOptions as $p): ?>
-                      <option value="<?= htmlspecialchars($p['value']) ?>" data-price="<?= htmlspecialchars($p['price']) ?>">
-                        <?= htmlspecialchars($p['label']) ?> - Rp <?= number_format($p['price'], 0, ',', '.') ?>
-                      </option>
-                    <?php endforeach; ?>
-                  </select>
-                  <i class="fas fa-box input-icon"></i>
-                </div>
-                <small style="font-size: 0.8rem; color: #6b7280;">Sesuaikan paket dengan kebutuhan durasi & fasilitas pelanggan.</small>
-              </div>
             </div>
           </div>
 
@@ -874,6 +866,9 @@ function loadJadwal(tanggal) {
 
         html += `
           <label class="time-slot ${booked ? 'booked' : ''}" 
+            data-jadwal-id="${j.id_jadwal}"
+            data-mulai="${mulai}"
+            data-selesai="${selesai}"
             ${!booked ? `onclick="selectSlot(this, ${j.id_jadwal}, '${mulai}', '${selesai}', '${tanggal}')"` : ''}>
             <input type="radio" name="waktu" ${booked ? 'disabled' : ''}>
             <div class="time-text">${mulai} - ${selesai}</div>
@@ -896,14 +891,78 @@ function loadJadwal(tanggal) {
     });
 }
 
-// Fungsi select slot waktu
+// Fungsi select slot waktu dengan auto-select berdasarkan durasi paket
 function selectSlot(el, id, mulai, selesai, tanggal) {
-  document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
-  if (el) el.classList.add('selected');
+  const paketSelect = document.getElementById('paket');
+  const selectedPaket = paketSelect.options[paketSelect.selectedIndex];
   
-  document.getElementById('jadwalId').value = id;
+  // Cek apakah paket sudah dipilih
+  if (!selectedPaket || !selectedPaket.value) {
+    alert('Silakan pilih paket terlebih dahulu sebelum memilih jadwal.');
+    return;
+  }
+  
+  const duration = selectedPaket ? parseInt(selectedPaket.dataset.duration) || 1 : 1;
+  
+  // Reset semua selection
+  document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+  
+  // Ambil semua slot waktu yang tersedia
+  const allSlots = Array.from(document.querySelectorAll('.time-slot:not(.booked)'));
+  const currentSlotIndex = allSlots.indexOf(el);
+  
+  if (currentSlotIndex === -1) return;
+  
+  // Cari slot-slot yang perlu dipilih berdasarkan durasi
+  const selectedSlots = [];
+  const selectedJadwalIds = [];
+  let lastEndTime = '';
+  
+  for (let i = 0; i < duration && (currentSlotIndex + i) < allSlots.length; i++) {
+    const slot = allSlots[currentSlotIndex + i];
+    const slotId = slot.getAttribute('data-jadwal-id');
+    const slotMulai = slot.getAttribute('data-mulai');
+    const slotSelesai = slot.getAttribute('data-selesai');
+    
+    if (!slotId || slot.classList.contains('booked')) {
+      // Jika ada slot yang sudah dibooking, batalkan semua selection
+      document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+      alert(`Tidak dapat memilih ${duration} jam berturut-turut. Ada slot yang sudah dibooking.`);
+      return;
+    }
+    
+    // Verifikasi slot-slot berturut-turut
+    if (i > 0) {
+      const prevSlot = allSlots[currentSlotIndex + i - 1];
+      const prevSelesai = prevSlot.getAttribute('data-selesai');
+      
+      if (slotMulai !== prevSelesai) {
+        // Slot tidak berturut-turut
+        document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+        alert(`Tidak dapat memilih ${duration} jam berturut-turut. Slot tidak tersedia.`);
+        return;
+      }
+    }
+    
+    slot.classList.add('selected');
+    selectedSlots.push(slot);
+    selectedJadwalIds.push(slotId);
+    lastEndTime = slotSelesai;
+  }
+  
+  // Validasi apakah semua slot berhasil dipilih
+  if (selectedJadwalIds.length < duration) {
+    document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+    alert(`Tidak dapat memilih ${duration} jam berturut-turut. Slot tidak tersedia.`);
+    return;
+  }
+  
+  // Set nilai form
+  document.getElementById('jadwalId').value = selectedJadwalIds[0]; // ID jadwal pertama untuk kompatibilitas
+  document.getElementById('selectedJadwalIds').value = selectedJadwalIds.join(',');
   document.getElementById('jamBooking').value = mulai;
   
+  // Format tanggal untuk summary
   const date = new Date(tanggal + 'T00:00:00').toLocaleDateString('id-ID', { 
     weekday: 'long', 
     day: 'numeric', 
@@ -911,7 +970,12 @@ function selectSlot(el, id, mulai, selesai, tanggal) {
     year: 'numeric' 
   });
   
-  document.getElementById('summaryTanggalWaktu').textContent = `${date}, ${mulai} - ${selesai}`;
+  // Format waktu untuk summary
+  const waktuText = duration > 1 
+    ? `${mulai} - ${lastEndTime} (${duration} jam)`
+    : `${mulai} - ${selesai}`;
+  
+  document.getElementById('summaryTanggalWaktu').textContent = `${date}, ${waktuText}`;
   checkForm();
 }
 
@@ -920,17 +984,30 @@ function updateTotal() {
   const select = document.getElementById('paket');
   const opt = select.options[select.selectedIndex];
   const price = opt?.dataset.price;
+  const duration = opt?.dataset.duration;
   
   if (price) {
     document.getElementById('totalTagihan').value = price;
     document.getElementById('totalTagihanDisplay').value = formatRupiah(price);
     document.getElementById('summaryTotal').textContent = formatRupiah(price);
     document.getElementById('summaryPaket').textContent = opt.text.split(' - ')[0];
+    
+    // Update info jam berdasarkan durasi paket
+    const jamInfo = document.getElementById('jamInfo');
+    if (duration) {
+      jamInfo.style.color = '#7c3aed';
+      jamInfo.style.fontWeight = '600';
+    }
   } else {
     document.getElementById('totalTagihan').value = '';
     document.getElementById('totalTagihanDisplay').value = '';
     document.getElementById('summaryTotal').textContent = 'Rp 0';
     document.getElementById('summaryPaket').textContent = '-';
+    
+    const jamInfo = document.getElementById('jamInfo');
+    jamInfo.textContent = 'Pilih studio, tanggal, dan paket terlebih dahulu untuk melihat jadwal yang tersedia.';
+    jamInfo.style.color = '#6b7280';
+    jamInfo.style.fontWeight = 'normal';
   }
   checkForm();
 }
@@ -953,10 +1030,76 @@ document.getElementById('bookingForm').addEventListener('input', function(e) {
       break;
     case 'paket':
       updateTotal();
+      // Reset jadwal selection ketika paket berubah
+      document.getElementById('jadwalId').value = '';
+      document.getElementById('selectedJadwalIds').value = '';
+      document.getElementById('jamBooking').value = '';
+      document.getElementById('summaryTanggalWaktu').textContent = '-';
+      document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
       break;
   }
   checkForm();
 });
+
+// Fungsi untuk memuat paket berdasarkan studio
+function loadPaketByStudio(studioId) {
+  const paketSelect = document.getElementById('paket');
+  
+  if (!studioId) {
+    paketSelect.innerHTML = '<option value="">-- Pilih Studio Terlebih Dahulu --</option>';
+    paketSelect.disabled = true;
+    return;
+  }
+  
+  // Tampilkan loading
+  paketSelect.innerHTML = '<option value="">Memuat paket...</option>';
+  paketSelect.disabled = true;
+  
+  const url = `../controller/controller_booking.php?action=get_paket_by_studio&studio_id=${encodeURIComponent(studioId)}`;
+  
+  fetch(url)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        paketSelect.innerHTML = '<option value="">Tidak ada paket tersedia</option>';
+        paketSelect.disabled = true;
+        return;
+      }
+      
+      // Isi dropdown paket
+      let html = '<option value="">-- Pilih Paket --</option>';
+      data.forEach(p => {
+        html += `<option value="${p.value}" data-price="${p.price}" data-duration="${p.duration}">
+          ${p.label} - Rp ${new Intl.NumberFormat('id-ID').format(p.price)}
+        </option>`;
+      });
+      
+      paketSelect.innerHTML = html;
+      paketSelect.disabled = false;
+      
+      // Reset total
+      document.getElementById('totalTagihan').value = '';
+      document.getElementById('totalTagihanDisplay').value = '';
+      document.getElementById('summaryTotal').textContent = 'Rp 0';
+      document.getElementById('summaryPaket').textContent = '-';
+      
+      checkForm();
+    })
+    .catch(err => {
+      console.error("Error loading paket:", err);
+      paketSelect.innerHTML = '<option value="">Gagal memuat paket</option>';
+      paketSelect.disabled = true;
+    });
+}
 
 // Event listener untuk perubahan studio
 document.getElementById('studio').addEventListener('change', function() {
@@ -965,8 +1108,12 @@ document.getElementById('studio').addEventListener('change', function() {
   // Reset jadwal selection
   document.getElementById('jadwalId').value = '';
   document.getElementById('jamBooking').value = '';
+  document.getElementById('selectedJadwalIds').value = '';
   document.getElementById('summaryTanggalWaktu').textContent = '-';
   document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+  
+  // Reset paket
+  loadPaketByStudio(this.value);
   
   // Update ringkasan studio
   const selectedOption = this.options[this.selectedIndex];

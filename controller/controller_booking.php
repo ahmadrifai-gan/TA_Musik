@@ -33,6 +33,21 @@ class BookingController {
         $total_tagihan = mysqli_real_escape_string($this->koneksi, $data['totalTagihan']);
         $metode_pembayaran = mysqli_real_escape_string($this->koneksi, $data['metodePembayaran']);
         
+        // Ambil semua jadwal ID yang dipilih (untuk multi-hour booking)
+        $selected_jadwal_ids = [];
+        if (!empty($data['selected_jadwal_ids'])) {
+            $selected_jadwal_ids = explode(',', $data['selected_jadwal_ids']);
+            $selected_jadwal_ids = array_map(function($id) {
+                return mysqli_real_escape_string($this->koneksi, trim($id));
+            }, $selected_jadwal_ids);
+            $selected_jadwal_ids = array_filter($selected_jadwal_ids);
+        }
+        
+        // Jika tidak ada selected_jadwal_ids, gunakan jadwal_id saja
+        if (empty($selected_jadwal_ids)) {
+            $selected_jadwal_ids = [$id_jadwal];
+        }
+        
         // Mulai transaksi
         mysqli_begin_transaction($this->koneksi);
         
@@ -41,7 +56,7 @@ class BookingController {
             $query_booking = "INSERT INTO booking_offline 
                              (id_jadwal, id_studio, nama_lengkap, email, whatsapp, tanggal, jam_booking, 
                              paket, total_tagihan, metode_pembayaran, status, status_pembayaran) 
-                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'menunggu', 'belum dibayar')";
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'menunggu', 'dp_dibayar')";
             
             $stmt_booking = mysqli_prepare($this->koneksi, $query_booking);
             mysqli_stmt_bind_param($stmt_booking, "isssssssss", 
@@ -52,13 +67,15 @@ class BookingController {
                 throw new Exception("Gagal menyimpan booking: " . mysqli_error($this->koneksi));
             }
             
-            // 2. Update status jadwal
-            $query_update_jadwal = "UPDATE jadwal SET status = 'Dibooking' WHERE id_jadwal = ?";
-            $stmt_update = mysqli_prepare($this->koneksi, $query_update_jadwal);
-            mysqli_stmt_bind_param($stmt_update, "i", $id_jadwal);
-            
-            if (!mysqli_stmt_execute($stmt_update)) {
-                throw new Exception("Gagal update status jadwal: " . mysqli_error($this->koneksi));
+            // 2. Update status semua jadwal yang dipilih menjadi 'Dibooking'
+            foreach ($selected_jadwal_ids as $jadwal_id) {
+                $query_update_jadwal = "UPDATE jadwal SET status = 'Dibooking' WHERE id_jadwal = ?";
+                $stmt_update = mysqli_prepare($this->koneksi, $query_update_jadwal);
+                mysqli_stmt_bind_param($stmt_update, "i", $jadwal_id);
+                
+                if (!mysqli_stmt_execute($stmt_update)) {
+                    throw new Exception("Gagal update status jadwal: " . mysqli_error($this->koneksi));
+                }
             }
             
             // Commit transaksi
@@ -129,6 +146,45 @@ class BookingController {
         }
         
         return $studio;
+    }
+    
+    // Public function untuk mendapatkan paket berdasarkan studio
+    public function getPaketByStudio($studio_id) {
+        $studio_id = mysqli_real_escape_string($this->koneksi, $studio_id);
+        
+        // Ambil nama studio untuk menentukan paket
+        $query_studio = "SELECT nama FROM studio WHERE id_studio = ?";
+        $stmt_studio = mysqli_prepare($this->koneksi, $query_studio);
+        mysqli_stmt_bind_param($stmt_studio, "s", $studio_id);
+        mysqli_stmt_execute($stmt_studio);
+        $result_studio = mysqli_stmt_get_result($stmt_studio);
+        $studio_data = mysqli_fetch_assoc($result_studio);
+        
+        if (!$studio_data) {
+            return [];
+        }
+        
+        $nama_studio = strtolower($studio_data['nama']);
+        
+        // Tentukan paket berdasarkan nama studio
+        $paket = [];
+        
+        if (stripos($nama_studio, 'bronze') !== false) {
+            // Studio Bronze: 1 jam = 50, 2 jam = 90, 3 jam = 130
+            $paket = [
+                ['value' => 'bronze-1jam', 'label' => 'Tanpa Keyboad', 'price' => 35000, 'duration' => 1],
+                ['value' => 'bronze-2jam', 'label' => 'Dengan Keyboard', 'price' => 40000, 'duration' => 1],
+            ];
+        } elseif (stripos($nama_studio, 'gold') !== false) {
+            // Studio Gold: dummy data (akan diganti user nanti)
+            $paket = [
+                ['value' => 'gold-1jam', 'label' => 'Paket 1 Jam', 'price' => 50000, 'duration' => 1],
+                ['value' => 'gold-2jam', 'label' => 'Paket 2 Jam', 'price' => 90000, 'duration' => 2],
+                ['value' => 'gold-3jam', 'label' => 'Paket 3 Jam', 'price' => 130000, 'duration' => 3]
+            ];
+        }
+        
+        return $paket;
     }
     
     // Public function untuk mendapatkan tanggal tersedia
@@ -248,7 +304,7 @@ class BookingController {
         $query = "SELECT b.*, s.nama as nama_studio, j.jam_mulai, j.jam_selesai
                   FROM booking_offline b
                   JOIN studio s ON b.id_studio = s.id_studio
-                  JOIN jadwal j ON b.id_jadwall = j.id_jadwal
+                  JOIN jadwal j ON b.id_jadwal = j.id_jadwal
                   WHERE b.id_offline = ?";
         
         $stmt = mysqli_prepare($this->koneksi, $query);
@@ -269,7 +325,7 @@ if (isset($_POST['tambah'])) {
     
     if ($result['success']) {
         $_SESSION['booking_success'] = $result;
-        header("Location: ../admin/order.php");
+        header("Location: ../admin/order_offline.php");
     } else {
         $_SESSION['error'] = $result['message'];
         header("Location: ../admin/tambah_booking.php");
@@ -304,6 +360,23 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_tanggal_tersedia') {
     
     header('Content-Type: application/json');
     echo json_encode($tanggal);
+    exit();
+}
+
+// Handle AJAX request untuk get paket berdasarkan studio
+if (isset($_GET['action']) && $_GET['action'] == 'get_paket_by_studio') {
+    $studio_id = $_GET['studio_id'] ?? '';
+    
+    if (empty($studio_id)) {
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Studio ID tidak boleh kosong']);
+        exit();
+    }
+    
+    $paket = $bookingController->getPaketByStudio($studio_id);
+    
+    header('Content-Type: application/json');
+    echo json_encode($paket);
     exit();
 }
 

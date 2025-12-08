@@ -13,20 +13,6 @@
                 <span class="toggle-icon"><i class="icon-menu"></i></span>
             </div>
         </div>
-        <!-- <div class="header-left">
-            <div class="input-group icons">
-                <div class="input-group-prepend">
-                    <span class="input-group-text bg-transparent border-0 pr-2 pr-sm-3" id="basic-addon1"><i
-                            class="mdi mdi-magnify"></i></span>
-                </div>
-                <input type="search" class="form-control" placeholder="Search Dashboard" aria-label="Search Dashboard">
-                <div class="drop-down animated flipInX d-md-none">
-                    <form action="#">
-                        <input type="text" class="form-control" placeholder="Search">
-                    </form>
-                </div>
-            </div>
-        </div>  -->
         <div class="header-right">
             <ul class="clearfix">
                 <li class="icons dropdown">
@@ -42,14 +28,11 @@
                                 <li>
                                     <a href="../admin/profile.php"><i class="icon-user"></i> <span>Profile</span></a>
                                 </li>
-                                <li><a href="../index.php"  onclick="confirmLogout()"><i class="icon-key"></i> <span>Logout</span></a></li>
-                                <script>
-                                    function confirmLogout() {
-                                        if (confirm("Apakah Anda yakin ingin logout?")) {
-                                            window.location.href = "../logout.php";
-                                        }
-                                    }
-                                </script>
+                                <li>
+                                    <a href="#" onclick="confirmLogout(event)">
+                                        <i class="icon-key"></i> <span>Logout</span>
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -61,6 +44,17 @@
 <!--**********************************
             Header end ti-comment-alt
         ***********************************-->
+
+<script>
+function confirmLogout(event) {
+    event.preventDefault(); // Mencegah link default behavior
+    
+    if (confirm("Apakah Anda yakin ingin logout?")) {
+        // Lakukan AJAX logout atau redirect ke logout.php
+        window.location.href = "../logout.php";
+    }
+}
+</script>
 
 <style>
 /* Hamburger Menu Position */

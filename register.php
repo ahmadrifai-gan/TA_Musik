@@ -20,11 +20,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $nama = trim($_POST['nama_lengkap'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $username = trim($_POST['username'] ?? '');
-    $whatsapp = trim($_POST['whatsapp'] ?? '');
+    $country_code = trim($_POST['country_code'] ?? '');
+    $phone_number_only = trim($_POST['phone_number_only'] ?? '');
+    $whatsapp = $country_code . $phone_number_only; // Gabungkan kode negara + nomor
     $password = $_POST['password'] ?? '';
     $confirm  = $_POST['confirm'] ?? '';
 
-    if ($nama === '' || $email === '' || $username === '' || $password === '' || $confirm === '' || $whatsapp === '') {
+    if ($nama === '' || $email === '' || $username === '' || $password === '' || $confirm === '' || $phone_number_only === '') {
         $register_msg = "Semua field wajib diisi.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $register_msg = "Format email tidak valid.";
@@ -129,6 +131,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 </style>
 
+  <style>
+    .phone-input-group {
+      display: flex;
+      gap: 10px;
+    }
+    .country-select {
+      flex: 0 0 140px;
+    }
+    .phone-number {
+      flex: 1;
+    }
+  </style>
 </head>
 <body class="bg-light">
 
@@ -171,7 +185,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           </div>
           <div class="mb-3">
             <label class="form-label">Nomor WhatsApp</label>
-            <input type="text" class="form-control" name="whatsapp" required value="<?= htmlspecialchars($whatsapp) ?>">
+            <div class="phone-input-group">
+              <select class="form-select country-select" name="country_code" id="countryCode" required>
+                <option value="+62" selected>🇮🇩 Indonesia (+62)</option>
+                <option value="+60">🇲🇾 Malaysia (+60)</option>
+                <option value="+65">🇸🇬 Singapore (+65)</option>
+                <option value="+66">🇹🇭 Thailand (+66)</option>
+                <option value="+63">🇵🇭 Philippines (+63)</option>
+                <option value="+84">🇻🇳 Vietnam (+84)</option>
+                <option value="+95">🇲🇲 Myanmar (+95)</option>
+                <option value="+673">🇧🇳 Brunei (+673)</option>
+                <option value="+856">🇱🇦 Laos (+856)</option>
+                <option value="+855">🇰🇭 Cambodia (+855)</option>
+                <option value="+1">🇺🇸 USA (+1)</option>
+                <option value="+44">🇬🇧 UK (+44)</option>
+                <option value="+61">🇦🇺 Australia (+61)</option>
+                <option value="+81">🇯🇵 Japan (+81)</option>
+                <option value="+82">🇰🇷 South Korea (+82)</option>
+                <option value="+86">🇨🇳 China (+86)</option>
+                <option value="+91">🇮🇳 India (+91)</option>
+                <option value="+971">🇦🇪 UAE (+971)</option>
+                <option value="+966">🇸🇦 Saudi Arabia (+966)</option>
+              </select>
+              <input type="text" class="form-control phone-number" name="phone_number" id="phoneNumber" value="+62" required>
+              <input type="hidden" name="phone_number_only" id="phoneNumberOnly">
+            </div>
+            <small class="text-muted">Nomor lengkap: <span id="fullNumber">+62</span></small>
           </div>
           <button type="submit" class="btn btn-success w-100">Register</button>
         </form>
@@ -201,6 +240,138 @@ function togglePassword(fieldId, icon) {
         icon.classList.add("bi-eye-slash");
     }
 }
+  const countryCode = document.getElementById('countryCode');
+  const phoneNumber = document.getElementById('phoneNumber');
+  const phoneNumberOnly = document.getElementById('phoneNumberOnly');
+  const fullNumber = document.getElementById('fullNumber');
+  
+  let lastValidValue = '+62';
+
+  // Update preview nomor lengkap
+  function updateFullNumber() {
+    const code = countryCode.value;
+    const inputValue = phoneNumber.value;
+    
+    // Ambil hanya angka setelah kode negara
+    const numberOnly = inputValue.slice(code.length).replace(/\D/g, '');
+    
+    // Update display
+    fullNumber.textContent = code + numberOnly;
+    
+    // Update hidden input untuk dikirim ke server (hanya nomor tanpa kode negara)
+    phoneNumberOnly.value = numberOnly;
+  }
+
+  // Event listener untuk perubahan kode negara
+  countryCode.addEventListener('change', function() {
+    const newCode = this.value;
+    const currentValue = phoneNumber.value;
+    
+    // Ambil nomor tanpa kode negara lama
+    const oldCode = lastValidValue.match(/^\+\d+/)[0];
+    const numberOnly = currentValue.slice(oldCode.length).replace(/\D/g, '');
+    
+    // Set input value dengan kode negara baru
+    phoneNumber.value = newCode + numberOnly;
+    lastValidValue = phoneNumber.value;
+    
+    updateFullNumber();
+    
+    // Focus dan taruh cursor di akhir
+    phoneNumber.focus();
+    phoneNumber.setSelectionRange(phoneNumber.value.length, phoneNumber.value.length);
+  });
+  
+  // Event listener untuk input nomor telepon
+  phoneNumber.addEventListener('input', function(e) {
+    const code = countryCode.value;
+    let value = e.target.value;
+    
+    // Jika input lebih pendek dari kode negara atau tidak dimulai dengan kode negara
+    if (value.length < code.length || !value.startsWith(code)) {
+      // Kembalikan ke nilai terakhir yang valid
+      phoneNumber.value = lastValidValue;
+      // Set cursor di akhir
+      const length = phoneNumber.value.length;
+      phoneNumber.setSelectionRange(length, length);
+      return;
+    }
+    
+    // Ambil bagian nomor (setelah kode negara)
+    let numberPart = value.slice(code.length);
+    
+    // Hanya izinkan angka
+    numberPart = numberPart.replace(/\D/g, '');
+    
+    // Hapus angka 0 di awal
+    while (numberPart.startsWith('0')) {
+      numberPart = numberPart.substring(1);
+    }
+    
+    // Gabungkan kode negara + nomor bersih
+    const finalValue = code + numberPart;
+    
+    // Set nilai input
+    phoneNumber.value = finalValue;
+    lastValidValue = finalValue;
+    
+    updateFullNumber();
+  });
+
+  // Prevent user dari menghapus atau mengedit kode negara
+  phoneNumber.addEventListener('keydown', function(e) {
+    const code = countryCode.value;
+    const cursorPos = e.target.selectionStart;
+    const cursorEnd = e.target.selectionEnd;
+    
+    // Jika ada seleksi yang mencakup kode negara
+    if (cursorPos < code.length) {
+      // Hanya izinkan arrow keys, tab, dan shortcut copy
+      const allowedKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End'];
+      
+      if (!allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        // Pindahkan cursor ke akhir kode negara
+        phoneNumber.setSelectionRange(code.length, code.length);
+      }
+    }
+  });
+
+  // Saat user klik, pindahkan cursor setelah kode negara jika di area kode
+  phoneNumber.addEventListener('click', function(e) {
+    const code = countryCode.value;
+    const cursorPos = e.target.selectionStart;
+    
+    if (cursorPos < code.length) {
+      setTimeout(() => {
+        phoneNumber.setSelectionRange(code.length, code.length);
+      }, 0);
+    }
+  });
+  
+  // Prevent select di area kode negara
+  phoneNumber.addEventListener('select', function(e) {
+    const code = countryCode.value;
+    if (e.target.selectionStart < code.length) {
+      e.target.setSelectionRange(code.length, e.target.selectionEnd);
+    }
+  });
+  
+  // Saat focus, taruh cursor setelah kode negara
+  phoneNumber.addEventListener('focus', function(e) {
+    const code = countryCode.value;
+    const value = e.target.value;
+    
+    // Jika input kosong atau hanya kode negara, set cursor di akhir
+    if (value === code) {
+      setTimeout(() => {
+        e.target.setSelectionRange(code.length, code.length);
+      }, 0);
+    }
+  });
+
+  // Set initial value
+  updateFullNumber();
 </script>
 </body>
 </html>

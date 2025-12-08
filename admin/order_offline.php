@@ -454,7 +454,7 @@ if (isset($_POST['update_status'])) {
                   <?php if ($row['status_pembayaran'] == 'lunas'): ?>
                     <span class="badge badge-success">Lunas</span>
                   <?php else: ?>
-                    <span class="badge badge-secondary">Belum Dibayar</span>
+                    <span class="badge badge-secondary">dp_dibayar</span>
                   <?php endif; ?>
                 </td>
                 <td>
@@ -618,7 +618,7 @@ if (isset($_POST['update_status'])) {
           <div class="form-group">
             <label>Status Pembayaran</label>
             <select name="status_pembayaran" class="form-control">
-              <option value="belum dibayar">Belum Dibayar</option>
+              <option value="dp_dibayar">dp_dibayar</option>
               <option value="lunas">Lunas</option>
             </select>
           </div>
@@ -659,7 +659,7 @@ if (isset($_POST['update_status'])) {
           <div class="form-group">
             <label><strong>Status Pembayaran</strong></label>
             <select name="pembayaran_value" id="pembayaran_value" class="form-control" required>
-              <option value="belum dibayar">Belum Dibayar</option>
+              <option value="dp_dibayar">dp_dibayar</option>
               <option value="lunas">Lunas</option>
             </select>
             <small class="form-text text-muted">
@@ -735,7 +735,7 @@ $(document).ready(function(){
     
     let pembayaran = $(this).data('pembayaran');
     if(pembayaran === 'lunas') $('#detailPembayaran').html('<span class="badge badge-success">Lunas</span>');
-    else $('#detailPembayaran').html('<span class="badge badge-secondary">Belum Dibayar</span>');
+    else $('#detailPembayaran').html('<span class="badge badge-secondary">dp_dibayar</span>');
 
     let st = $(this).data('status');
     if(st === 'terkonfirmasi') $('#detailStatus').html('<span class="badge badge-success">Terkonfirmasi</span>');
