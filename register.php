@@ -100,12 +100,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </html>
             ';
 
-            // Headers untuk HTML email
-            $headers = "MIME-Version: 1.0" . "\r\n";
-            $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-            $headers .= 'From: Reys Studio <noreply@reysmusicstudio.mif.myhost.id>' . "\r\n";
-            $headers .= 'Reply-To: noreply@reysmusicstudio.mif.myhost.id' . "\r\n";
-            $headers .= 'X-Mailer: PHP/' . phpversion();
+// Headers untuk HTML email
+$headers = "MIME-Version: 1.0" . "\r\n";
+$headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+$headers .= 'From: Reys Studio <noreply@reysmusicstudio.mif.myhost.id>' . "\r\n";
+$headers .= 'Reply-To: noreply@reysmusicstudio.mif.myhost.id' . "\r\n";
+$headers .= 'X-Mailer: PHP/' . phpversion();
+
+// Setelah email dikirim, redirect user ke halaman verifikasi
+header("Location: verifikasi.php?email=" . urlencode($email));
+exit;
+
 
             // Kirim email menggunakan PHP mail()
             if (mail($email, $subject, $message, $headers)) {
@@ -137,25 +142,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <title>Register - Reys Studio</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-  <style>
-.password-wrapper {
-    position: relative;
-}
-.password-wrapper input {
-    padding-right: 40px;
-}
+
+<style>
+.password-wrapper { position: relative; }
+.password-wrapper input { padding-right: 40px; }
 .password-wrapper .toggle-password {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    font-size: 1.2rem;
-    color: #6c757d;
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    cursor: pointer; font-size: 1.2rem; color: #6c757d;
 }
-.password-wrapper .toggle-password:hover {
-    color: #000;
-}
+
+.phone-input-group { display: flex; gap: 10px; }
+.country-select { flex: 0 0 140px; }
+.phone-number { flex: 1; }
+
+.is-valid { border-color: #28a745 !important; }
+.is-invalid { border-color: #dc3545 !important; }
+</style>
+
 .phone-input-group {
     display: flex;
     gap: 10px;
@@ -192,14 +195,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <label class="form-label">Nama Lengkap</label>
             <input type="text" class="form-control" name="nama_lengkap" required value="<?= htmlspecialchars($nama) ?>">
           </div>
+
           <div class="mb-3">
             <label class="form-label">Email</label>
             <input type="email" class="form-control" name="email" required value="<?= htmlspecialchars($email) ?>">
           </div>
+
           <div class="mb-3">
             <label class="form-label">Username</label>
             <input type="text" class="form-control" name="username" required value="<?= htmlspecialchars($username) ?>">
           </div>
+          
           <div class="mb-3">
             <label class="form-label">Password</label>
             <div class="password-wrapper">
@@ -207,6 +213,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('password', this)"></i>
             </div>
           </div>
+
           <div class="mb-3">
             <label class="form-label">Konfirmasi Password</label>
             <div class="password-wrapper">
@@ -214,6 +221,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <i class="bi bi-eye-slash toggle-password" onclick="togglePassword('confirm', this)"></i>
             </div>
           </div>
+
           <div class="mb-3">
             <label class="form-label">Nomor WhatsApp</label>
             <div class="phone-input-group mb-3">
@@ -224,26 +232,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <option value="+66">🇹🇭 Thailand (+66)</option>
                 <option value="+63">🇵🇭 Philippines (+63)</option>
                 <option value="+84">🇻🇳 Vietnam (+84)</option>
-                <option value="+95">🇲🇲 Myanmar (+95)</option>
-                <option value="+673">🇧🇳 Brunei (+673)</option>
-                <option value="+856">🇱🇦 Laos (+856)</option>
-                <option value="+855">🇰🇭 Cambodia (+855)</option>
-                <option value="+1">🇺🇸 USA (+1)</option>
-                <option value="+44">🇬🇧 UK (+44)</option>
-                <option value="+61">🇦🇺 Australia (+61)</option>
-                <option value="+81">🇯🇵 Japan (+81)</option>
-                <option value="+82">🇰🇷 South Korea (+82)</option>
-                <option value="+86">🇨🇳 China (+86)</option>
-                <option value="+91">🇮🇳 India (+91)</option>
-                <option value="+971">🇦🇪 UAE (+971)</option>
-                <option value="+966">🇸🇦 Saudi Arabia (+966)</option>
               </select>
-              <input type="text" class="form-control phone-number" name="phone_number" id="phoneNumber" value="+62" required>
+              <input type="text" class="form-control phone-number" id="phoneNumber" placeholder="812345678" required>
               <input type="hidden" name="phone_number_only" id="phoneNumberOnly">
             </div>
             <small class="text-muted">Nomor lengkap: <span id="fullNumber">+62</span></small>
             <div id="phoneValidation" class="mt-1"></div>
           </div>
+
           <button type="submit" class="btn btn-success w-100" id="submitBtn">Register</button>
         </form>
 
@@ -265,6 +261,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <script>
 function togglePassword(fieldId, icon) {
     const field = document.getElementById(fieldId);
+    field.type = field.type === "password" ? "text" : "password";
+    icon.classList.toggle("bi-eye");
+    icon.classList.toggle("bi-eye-slash");
+}
 
     if (field.type === "password") {
         field.type = "text";
