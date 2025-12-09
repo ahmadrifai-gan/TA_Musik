@@ -550,14 +550,28 @@ function renderCalendar() {
     }
     
     // Add current month days
-    const today = new Date();
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'calendar-day';
-        dayDiv.textContent = day;
-        
-        const dateObj = new Date(year, month, day);
-        
+    // Add current month days
+const today = new Date();
+today.setHours(0, 0, 0, 0); // Reset waktu ke tengah malam untuk perbandingan yang akurat
+
+for (let day = 1; day <= daysInMonth; day++) {
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'calendar-day';
+    dayDiv.textContent = day;
+    
+    const dateObj = new Date(year, month, day);
+    dateObj.setHours(0, 0, 0, 0);
+    
+    // 🔥 VALIDASI: Cek apakah tanggal sudah lewat
+    const isPastDate = dateObj < today;
+    
+    if (isPastDate) {
+        // Tanggal sudah lewat - nonaktifkan
+        dayDiv.classList.add('other-month'); // Style seperti tanggal bulan lain
+        dayDiv.style.opacity = '0.3';
+        dayDiv.style.cursor = 'not-allowed';
+        dayDiv.style.textDecoration = 'line-through';
+    } else {
         // Check if today
         if (dateObj.toDateString() === today.toDateString()) {
             dayDiv.classList.add('today');
@@ -568,11 +582,12 @@ function renderCalendar() {
             dayDiv.classList.add('selected');
         }
         
-        // Add click event
+        // Add click event HANYA untuk tanggal >= hari ini
         dayDiv.addEventListener('click', () => selectDate(dateObj));
-        
-        grid.appendChild(dayDiv);
     }
+    
+    grid.appendChild(dayDiv);
+}
     
     // Add next month days to fill grid
     const totalCells = grid.children.length - 7;
@@ -586,7 +601,19 @@ function renderCalendar() {
 }
 
 // Select date
+// Select date
 function selectDate(date) {
+    // 🔥 VALIDASI: Cegah pemilihan tanggal yang sudah lewat
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDateObj = new Date(date);
+    selectedDateObj.setHours(0, 0, 0, 0);
+    
+    if (selectedDateObj < today) {
+        alert('❌ Tidak dapat melihat jadwal untuk tanggal yang sudah lewat!\n\nSilakan pilih tanggal hari ini atau setelahnya.');
+        return; // Stop execution
+    }
+    
     selectedDate = date;
     renderCalendar();
     renderTimeSlots();
