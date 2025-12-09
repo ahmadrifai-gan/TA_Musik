@@ -290,9 +290,9 @@ $queryBooking->close();
     <div class="container-custom px-3">
         <div class="row g-4">
             <div class="col-md-6">
-                <div class="foto-studio">
-                    FOTO
-                </div>
+             <div class="ratio ratio-16x9">
+                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1600&auto=format&fit=crop" alt="Studio" class="w-100 h-100" style="object-fit: cover;">
+            </div>
             </div>
             <div class="col-md-6">
                 <div class="price-info">
