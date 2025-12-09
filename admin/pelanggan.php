@@ -20,7 +20,7 @@ $total_data = mysqli_fetch_assoc($result_count)['total'];
 $total_pages = ceil($total_data / $limit);
 
 // Ambil data user
-$query = "SELECT id_user, username, nama_lengkap, email, password FROM user ORDER BY id_user ASC LIMIT $limit OFFSET $offset";
+$query = "SELECT id_user, username, nama_lengkap, email, whatsapp FROM user ORDER BY id_user ASC LIMIT $limit OFFSET $offset";
 $result = mysqli_query($koneksi, $query);
 $data = [];
 if ($result) {
@@ -41,7 +41,7 @@ if ($result) {
           <div style="flex:1; display:flex; align-items:center; justify-content:center;">Username</div>
           <div style="flex:1.5; display:flex; align-items:center; justify-content:center;">Nama Lengkap</div>
           <div style="flex:2; display:flex; align-items:center; justify-content:center;">Email</div>
-          <div style="flex:2; display:flex; align-items:center; justify-content:center;">Password</div>
+          <div style="flex:2; display:flex; align-items:center; justify-content:center;">No.WhastApp</div>
           <!-- <div style="width:100px; display:flex; align-items:center; justify-content:center;">Aksi</div> -->
       </div>
 
@@ -57,7 +57,7 @@ if ($result) {
               <div style="flex:1; text-align:center;"><?= htmlspecialchars($row['username']) ?></div>
               <div style="flex:1.5; text-align:center;"><?= htmlspecialchars($row['nama_lengkap']) ?></div>
               <div style="flex:2; text-align:center; word-break:break-word;"><?= htmlspecialchars($row['email']) ?></div>
-              <div style="flex:2; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<?= htmlspecialchars($row['password']) ?>"><?= htmlspecialchars($row['password']) ?></div>
+              <div style="flex:2; text-align:center;"><?= htmlspecialchars($row['whatsapp'] ?? '-') ?></div>
 
               <!-- Tombol Hapus -->
               <!-- <div style="width:100px; display:flex; justify-content:center;">
