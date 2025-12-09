@@ -398,11 +398,11 @@ label { font-weight: 500; }
         </div>
         <div class="col-md-3">
           <label>Dari</label>
-          <input type="date" name="tgl_awal" class="form-control" value="<?=htmlspecialchars($tgl_awal)?>">
+          <input type="date" name="tgl_awal" class="form-control" value="<?=htmlspecialchars($tgl_awal)?>" id="tglAwal">
         </div>
         <div class="col-md-3">
           <label>Sampai</label>
-          <input type="date" name="tgl_akhir" class="form-control" value="<?=htmlspecialchars($tgl_akhir)?>">
+          <input type="date" name="tgl_akhir" class="form-control" value="<?=htmlspecialchars($tgl_akhir)?>" id="tglAkhir">
         </div>
         <div class="col-md-3">
           <button class="btn btn-filter mt-2" type="submit">
@@ -485,11 +485,53 @@ label { font-weight: 500; }
 </div>
 
 <script>
+// Validasi tanggal agar "Sampai" tidak lebih kecil dari "Dari"
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filterForm');
+    const tglAwal = document.getElementById('tglAwal');
+    const tglAkhir = document.getElementById('tglAkhir');
+    
+    // Set min date untuk tgl_akhir berdasarkan tgl_awal
+    tglAwal.addEventListener('change', function() {
+        tglAkhir.min = this.value;
+        
+        // Jika tgl_akhir lebih kecil dari tgl_awal, reset tgl_akhir
+        if (tglAkhir.value && tglAkhir.value < this.value) {
+            tglAkhir.value = this.value;
+            alert('Tanggal "Sampai" tidak boleh lebih kecil dari tanggal "Dari"');
+        }
+    });
+    
+    // Validasi saat form disubmit
+    form.addEventListener('submit', function(e) {
+        if (tglAwal.value && tglAkhir.value) {
+            if (tglAkhir.value < tglAwal.value) {
+                e.preventDefault();
+                alert('Tanggal "Sampai" tidak boleh lebih kecil dari tanggal "Dari"!');
+                tglAkhir.focus();
+                return false;
+            }
+        }
+    });
+    
+    // Set initial min untuk tgl_akhir saat load halaman
+    if (tglAwal.value) {
+        tglAkhir.min = tglAwal.value;
+    }
+});
+
 function exportToExcel() {
     const form = document.getElementById('filterForm');
     const studio = form.querySelector('[name="studio"]').value;
     const tgl_awal = form.querySelector('[name="tgl_awal"]').value;
     const tgl_akhir = form.querySelector('[name="tgl_akhir"]').value;
+    
+    // Validasi tanggal sebelum export
+    if (tgl_awal && tgl_akhir && tgl_akhir < tgl_awal) {
+        alert('Tanggal "Sampai" tidak boleh lebih kecil dari tanggal "Dari"!');
+        return false;
+    }
+    
     const url = window.location.pathname + '?studio=' + encodeURIComponent(studio) +
                 '&tgl_awal=' + tgl_awal + '&tgl_akhir=' + tgl_akhir + '&export=excel';
     window.open(url, '_blank');
