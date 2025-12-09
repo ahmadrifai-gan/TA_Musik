@@ -700,9 +700,9 @@ $result = $stmt->get_result();
           </select>
         </div>
 
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Pilih Tanggal Baru</label>
-          <input type="date" name="tanggal_baru" id="tanggal_baru" class="form-control" required>
+       <div class="mb-3">
+           <label class="form-label fw-semibold">Pilih Tanggal Baru</label>
+           <input type="date" name="tanggal_baru" id="tanggal_baru" class="form-control" required min="<?= date('Y-m-d') ?>">
         </div>
 
         <div class="mb-3">
@@ -811,9 +811,54 @@ document.getElementById('btnSimpanPerubahan').addEventListener('click', function
     const jamBaru = document.getElementById('jam_baru').value;
     const studioBaru = document.getElementById('studio_baru_select').value;
     const paketBaru = document.getElementById('paket_baru_select').value;
+    const idOrderSekarang = document.getElementById('id_order').value;
     
     if (!tanggalBaru || !jamBaru || !studioBaru || !paketBaru) {
         alert('Semua field harus diisi!');
+        return;
+    }
+    
+    // Validasi tanggal tidak boleh sebelum hari ini
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(tanggalBaru);
+    
+    if (selectedDate < today) {
+        alert('Tanggal booking tidak boleh sebelum hari ini!');
+        return;
+    }
+    
+    // Validasi: Cek apakah kombinasi studio, tanggal, dan jam sudah ada di tabel
+    let bentrok = false;
+    document.querySelectorAll('tbody tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 6) return; // Skip jika bukan row data
+        
+        const idOrderRow = row.getAttribute('data-id');
+        if (idOrderRow === idOrderSekarang) return; // Skip booking sendiri
+        
+        // Ambil data dari row
+        const studioCell = cells[2].textContent.trim(); // Kolom Studio
+        const tanggalCell = cells[4].textContent.trim(); // Kolom Tanggal
+        const jamCell = cells[5].textContent.trim(); // Kolom Jam
+        const statusKonfirmasi = cells[8].textContent.trim(); // Kolom Status Konfirmasi
+        
+        // Ambil nama studio yang dipilih
+        const studioSelect = document.getElementById('studio_baru_select');
+        const namaStudioBaru = studioSelect.options[studioSelect.selectedIndex].text;
+        
+        // Cek jika status bukan "Dibatalkan" dan data sama
+        if (!statusKonfirmasi.includes('Dibatalkan')) {
+            if (studioCell.includes(namaStudioBaru) && 
+                tanggalCell === tanggalBaru && 
+                jamCell === jamBaru) {
+                bentrok = true;
+            }
+        }
+    });
+    
+    if (bentrok) {
+        alert('⚠️ Kombinasi Studio, Tanggal, dan Jam yang sama sudah dibooking!\n\nSilakan ubah salah satu:\n- Pilih studio berbeda, ATAU\n- Pilih tanggal berbeda, ATAU\n- Pilih jam berbeda');
         return;
     }
     
