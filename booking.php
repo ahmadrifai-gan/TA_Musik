@@ -484,6 +484,12 @@ document.addEventListener('DOMContentLoaded', function(){
         </div>
 
         <div class="mb-3">
+          <label class="form-label">Tanggal</label>
+          <input type="date" id="tanggal" name="tanggal" class="form-control" value="<?= htmlspecialchars($check_date) ?>" min="<?= date('Y-m-d') ?>" onchange="reloadSlots()" required>
+          <small class="text-muted">📅 Booking hanya dapat dilakukan untuk hari ini atau setelahnya</small>
+        </div>
+
+        <div class="mb-3">
           <label class="form-label">Paket</label><br>
           <?php if($studio=='bronze'): ?>
             <input type="radio" name="paket" value="Tanpa Keyboard (35K/jam)" required> Tanpa Keyboard (35K/jam)<br>
@@ -493,12 +499,6 @@ document.addEventListener('DOMContentLoaded', function(){
             <input type="radio" name="paket" value="Paket 2 jam (90K)"> Paket 2 jam (90K)<br>
             <input type="radio" name="paket" value="Paket 3 jam (130K)"> Paket 3 jam (130K)
           <?php endif; ?>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Tanggal</label>
-          <input type="date" id="tanggal" name="tanggal" class="form-control" value="<?= htmlspecialchars($check_date) ?>" min="<?= date('Y-m-d') ?>" onchange="reloadSlots()" required>
-          <small class="text-muted">📅 Booking hanya dapat dilakukan untuk hari ini atau setelahnya</small>
         </div>
 
         <div class="mb-3">
