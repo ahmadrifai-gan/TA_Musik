@@ -3,76 +3,70 @@ $title = "Daftar Jadwal | Reys Music Studio";
 include "../config/koneksi.php";
 date_default_timezone_set("Asia/Jakarta");
 
-// --------------------------------------------------
-// (OPTIONAL) Pastikan tabel system_meta ada:
-// CREATE TABLE IF NOT EXISTS system_meta (id INT PRIMARY KEY, last_generated_date DATE);
-// INSERT INTO system_meta (id, last_generated_date) VALUES (1, NULL) ON DUPLICATE KEY UPDATE id=id;
-// --------------------------------------------------
+// ==== AUTO GENERATE JADWAL (BUFFER 7 HARI KE DEPAN) ====
+// ==== AUTO GENERATE JADWAL (1x PER HARI, BUFFER 7 HARI) ====
+$buffer_days = 7;
 
-// ==== 1) SAFE LAZY SCHEDULER: AUTO GENERATE HARIAN (1x/hari, tanpa cron) ====
-// Menghasilkan jadwal hari ini jika belum digenerate hari ini.
-// Aman untuk banyak concurrent user karena setiap insert dicek dulu (anti-duplikat).
+$meta = mysqli_fetch_assoc(
+    mysqli_query($koneksi, "SELECT last_generated_date FROM system_meta WHERE id=1")
+);
 
-// baca meta
-// GANTI LOGIKA: cek apakah sudah ada jadwal untuk hari ini
-$today = date("Y-m-d");
+$today = date('Y-m-d');
 
-$cek = mysqli_query($koneksi, "SELECT COUNT(*) AS jumlah FROM jadwal WHERE tanggal = '$today'");
-$row = mysqli_fetch_assoc($cek);
-$jadwal_hari_ini = $row['jumlah'];
-if ($jadwal_hari_ini == 0) {
-    // daftar studio & time slots (sama seperti yang kamu pakai di modal)
-    // Jika storenya di DB, kita baca dari tabel studio
-    $studio_query = mysqli_query($koneksi, "SELECT id_studio FROM studio");
+$lastGenerated = $meta['last_generated_date'] ?? null;
+
+if ($lastGenerated !== $today) {
+
+
+    // ambil semua studio
+    $studios = [];
+    $q = mysqli_query($koneksi, "SELECT id_studio FROM studio");
+    while ($r = mysqli_fetch_assoc($q)) {
+        $studios[] = $r['id_studio'];
+    }
+
     $time_slots = [
-        ['10:00:00', '11:00:00'],
-        ['11:00:00', '12:00:00'],
-        ['12:00:00', '13:00:00'],
-        ['13:00:00', '14:00:00'],
-        ['14:00:00', '15:00:00'],
-        ['15:00:00', '16:00:00'],
-        ['16:00:00', '17:00:00'],
-        ['17:00:00', '18:00:00'],
-        ['18:00:00', '19:00:00'],
-        ['19:00:00', '20:00:00'],
-        ['20:00:00', '21:00:00'],
-        ['21:00:00', '22:00:00']
+        ['10:00:00','11:00:00'],
+        ['11:00:00','12:00:00'],
+        ['12:00:00','13:00:00'],
+        ['13:00:00','14:00:00'],
+        ['14:00:00','15:00:00'],
+        ['15:00:00','16:00:00'],
+        ['16:00:00','17:00:00'],
+        ['17:00:00','18:00:00'],
+        ['18:00:00','19:00:00'],
+        ['19:00:00','20:00:00'],
+        ['20:00:00','21:00:00'],
+        ['21:00:00','22:00:00']
     ];
 
-    while ($s = mysqli_fetch_assoc($studio_query)) {
-        $studio_id = $s['id_studio'];
+    $start_date = new DateTime($today);
+$target = new DateTime($today);
+$target->modify("+$buffer_days days");
 
+while ($start_date <= $target) {
+    $tanggal = $start_date->format("Y-m-d");
+
+    foreach ($studios as $studio_id) {
         foreach ($time_slots as $slot) {
-            $jam_mulai = $slot[0];
-            $jam_selesai = $slot[1];
-
-            // cek dulu apakah sudah ada slot yang sama --> mencegah duplikat
-            $cek = mysqli_query($koneksi, "
-                SELECT id_jadwal FROM jadwal
-                WHERE id_studio = '".mysqli_real_escape_string($koneksi, $studio_id)."'
-                AND tanggal = '$today'
-                AND jam_mulai = '$jam_mulai'
-                LIMIT 1
+            mysqli_query($koneksi, "
+                INSERT IGNORE INTO jadwal
+                (jam_mulai, jam_selesai, status, id_studio, tanggal)
+                VALUES
+                ('{$slot[0]}','{$slot[1]}','Belum Dibooking','$studio_id','$tanggal')
             ");
-
-            if (mysqli_num_rows($cek) == 0) {
-                mysqli_query($koneksi, "
-                    INSERT INTO jadwal (jam_mulai, jam_selesai, status, id_studio, tanggal, jam_booking, id_order, deleted_at)
-                    VALUES ('{$jam_mulai}', '{$jam_selesai}', 'Belum Dibooking', '".mysqli_real_escape_string($koneksi, $studio_id)."', '$today', NULL, NULL, NULL)
-                ");
-            }
         }
     }
 
-    // update meta (gunakan REPLACE/INSERT ... ON DUPLICATE KEY jika row belum ada)
-    // Coba update, jika gagal berarti row belum ada -> insert
-    $upd = mysqli_query($koneksi, "UPDATE system_meta SET last_generated_date = '$today' WHERE id = 1");
-    if (!$upd) {
-        mysqli_query($koneksi, "INSERT INTO system_meta (id, last_generated_date) VALUES (1, '$today') ON DUPLICATE KEY UPDATE last_generated_date = '$today'");
-    }
+    $start_date->modify("+1 day");
 }
-// ==== END lazy scheduler ====
 
+// ==== END AUTO GENERATE ====
+mysqli_query($koneksi, "
+    UPDATE system_meta 
+    SET last_generated_date = '$today' 
+    WHERE id = 1
+");
 
 // ==== 2) ARCHIVE hanya jadwal LAMA yang status = 'Dibooking' atau punya id_order (sama seperti requirement) ====
 // Pindahkan booking lama ke jadwal_archive (jangan pindahkan yang sudah ada di archive)
@@ -89,7 +83,8 @@ mysqli_query($koneksi, "
 mysqli_query($koneksi, "
     DELETE FROM jadwal
     WHERE tanggal < CURDATE()
-    AND id_jadwal NOT IN (SELECT id_jadwal FROM booking_offline)
+      AND (status = 'Belum Dibooking' OR status IS NULL)
+      AND id_jadwal NOT IN (SELECT id_jadwal FROM booking_offline)
 ");
 
 
@@ -130,19 +125,16 @@ if (isset($_POST['generate_jadwal'])) {
         foreach ($studios as $studio_id) {
             foreach ($time_slots as $slot) {
                 // Cek apakah jadwal sudah ada
-                $check = mysqli_query($koneksi, "
-                    SELECT id_jadwal FROM jadwal 
-                    WHERE id_studio='".mysqli_real_escape_string($koneksi, $studio_id)."' 
-                    AND tanggal='$date_str' 
-                    AND jam_mulai='{$slot[0]}'
-                ");
-                
-                if (mysqli_num_rows($check) == 0) {
-                    $query = mysqli_query($koneksi, "
-                        INSERT INTO jadwal (jam_mulai, jam_selesai, status, id_studio, tanggal, jam_booking, id_order, deleted_at)
-                        VALUES ('{$slot[0]}', '{$slot[1]}', 'Belum Dibooking', '".mysqli_real_escape_string($koneksi, $studio_id)."', '$date_str', NULL, NULL, NULL)
-                    ");
-                    if ($query) $success_count++;
+                $query = mysqli_query($koneksi, "
+                INSERT IGNORE INTO jadwal
+                (jam_mulai, jam_selesai, status, id_studio, tanggal)
+                VALUES
+                ('{$slot[0]}','{$slot[1]}','Belum Dibooking','$studio_id','$date_str')
+              ");
+              
+              if ($query && mysqli_affected_rows($koneksi) > 0) {
+                  $success_count++;
+              }              
                 }
             }
         }
@@ -180,31 +172,58 @@ if (isset($_POST['edit'])) {
     exit;
 }
 
-// === HAPUS JADWAL ===
+// === HAPUS JADWAL (DIPERBAIKI) ===
 if (isset($_GET['hapus'])) {
     $id = mysqli_real_escape_string($koneksi, $_GET['hapus']);
     
-    // Cek apakah jadwal sudah dibooking
+    // Query untuk cek jadwal dan booking terkait
     $check_query = mysqli_query($koneksi, "
-        SELECT status, id_order FROM jadwal 
-        WHERE id_jadwal='$id'
+        SELECT 
+            j.id_jadwal,
+            j.status,
+            j.id_order,
+            b.status AS status_booking
+        FROM jadwal j
+        LEFT JOIN booking b ON j.id_jadwal = b.id_jadwal
+        WHERE j.id_jadwal = '$id'
+        LIMIT 1
     ");
     
     if ($check_query && mysqli_num_rows($check_query) > 0) {
         $data = mysqli_fetch_assoc($check_query);
         
-        // Hanya hapus jika status "Belum Dibooking" dan tidak ada id_order
-        if ($data['status'] == 'Belum Dibooking' && (empty($data['id_order']) || $data['id_order'] == 0)) {
-            $query = mysqli_query($koneksi, "DELETE FROM jadwal WHERE id_jadwal='$id'");
-            header("Location: jadwal.php?status=" . ($query ? 'sukses' : 'gagal') . "&aksi=hapus");
+        // Boleh hapus jika: Belum Dibooking DAN (tidak ada order ATAU booking dibatalkan)
+        $bisa_hapus = false;
+        
+        if ($data['status'] == 'Belum Dibooking') {
+            // Jika tidak ada booking sama sekali
+            if (is_null($data['id_order']) || $data['id_order'] == '' || $data['id_order'] == '0') {
+                $bisa_hapus = true;
+            }
+            // Jika ada booking tapi dibatalkan
+            elseif (!is_null($data['status_booking']) && $data['status_booking'] == 'dibatalkan') {
+                $bisa_hapus = true;
+            }
+        }
+        
+        if ($bisa_hapus) {
+            $delete_query = mysqli_query($koneksi, "DELETE FROM jadwal WHERE id_jadwal = '$id'");
+            
+            if ($delete_query) {
+                header("Location: jadwal.php?status=sukses&aksi=hapus");
+                exit;
+            } else {
+                header("Location: jadwal.php?status=gagal&aksi=hapus&msg=query_error");
+                exit;
+            }
         } else {
-            // Jadwal sudah dibooking, tidak bisa dihapus
             header("Location: jadwal.php?status=gagal&aksi=hapus_booking");
+            exit;
         }
     } else {
-        header("Location: jadwal.php?status=gagal&aksi=hapus");
+        header("Location: jadwal.php?status=gagal&aksi=hapus&msg=not_found");
+        exit;
     }
-    exit;
 }
 
 // === FILTER DATA ===
@@ -226,17 +245,20 @@ $where_sql = "WHERE " . implode(" AND ", $where);
 // PERBAIKAN QUERY: Cek status booking = 'dibatalkan' juga
 $sql = "
     SELECT 
-        j.*, 
+        j.*,
+        j.status AS status_asli,
         s.nama AS nama_studio,
-        CASE 
-            WHEN b.id_order IS NOT NULL AND b.status != 'dibatalkan' THEN 'Dibooking'
-            ELSE 'Belum Dibooking'
-        END AS status
+        b.id_order,
+        b.status AS status_booking,
+        CASE
+    WHEN b.id_order IS NOT NULL AND b.status != 'dibatalkan' THEN 'Dibooking'
+    ELSE j.status
+END AS status
     FROM jadwal j
-    JOIN studio s ON j.id_studio = s.id_studio
+    LEFT JOIN studio s ON j.id_studio = s.id_studio
     LEFT JOIN booking b ON j.id_jadwal = b.id_jadwal
     $where_sql
-    ORDER BY j.tanggal ASC, j.jam_mulai ASC
+    ORDER BY j.tanggal, j.jam_mulai
 ";
 $result = mysqli_query($koneksi, $sql);
 
@@ -447,7 +469,19 @@ require "../master/sidebar.php";
               $no = 1;
               if (mysqli_num_rows($result) > 0) :
                 while ($row = mysqli_fetch_assoc($result)) : 
-                  $bisa_hapus = ($row['status'] == 'Belum Dibooking' && (empty($row['id_order']) || $row['id_order'] == 0));
+                  // PERBAIKAN: Logika boleh hapus yang konsisten
+                  $bisa_hapus = false;
+                  
+                  if ($row['status_asli'] == 'Belum Dibooking') {
+                      // Tidak ada order sama sekali
+                      if (empty($row['id_order']) || $row['id_order'] == '0' || is_null($row['id_order'])) {
+                          $bisa_hapus = true;
+                      }
+                      // Ada order tapi booking dibatalkan
+                      elseif (isset($row['status_booking']) && $row['status_booking'] == 'dibatalkan') {
+                          $bisa_hapus = true;
+                      }
+                  }
                 ?>
                   <tr>
                     <td><?= $no++ ?></td>
@@ -463,12 +497,16 @@ require "../master/sidebar.php";
                       <?php endif; ?>
                     </td>
                     <td>
-                      <button class="btn btn-edit btn-sm" data-bs-toggle="modal" data-bs-target="#modalEdit<?= $row['id_jadwal'] ?>">Edit</button>
+                      <button class="btn btn-edit btn-sm" data-bs-toggle="modal" data-bs-target="#modalEdit<?= $row['id_jadwal'] ?>">
+                        <i class="fa fa-edit"></i> Edit
+                      </button>
                       
                       <?php if ($bisa_hapus) : ?>
                         <a href="jadwal.php?hapus=<?= $row['id_jadwal'] ?>" 
-                           onclick="return confirm('Yakin ingin menghapus jadwal ini?')" 
-                           class="btn btn-delete btn-sm">Hapus</a>
+                           onclick="return confirm('Yakin ingin menghapus jadwal ini?\n\nStudio: <?= htmlspecialchars($row['nama_studio']) ?>\nTanggal: <?= date('d/m/Y', strtotime($row['tanggal'])) ?>\nJam: <?= date('H:i', strtotime($row['jam_mulai'])) ?> - <?= date('H:i', strtotime($row['jam_selesai'])) ?>')" 
+                           class="btn btn-delete btn-sm">
+                          <i class="fa fa-trash"></i> Hapus
+                        </a>
                       <?php else : ?>
                         <button class="btn btn-delete btn-sm" disabled title="Tidak bisa dihapus - Jadwal sudah dibooking">
                           <i class="fa fa-lock"></i> Hapus
@@ -553,6 +591,8 @@ require "../master/sidebar.php";
       </div>
     </div>
 
+  </div>
+</div>
 
 <?php require "../master/footer.php"; ?>
 
@@ -601,24 +641,19 @@ function confirmGenerate(form) {
 }
 
 document.addEventListener("DOMContentLoaded", function(){
-    const status = "<?= $_GET['status'] ?? '' ?>";
-    const aksi = "<?= $_GET['aksi'] ?? '' ?>";
-    const count = "<?= $_GET['count'] ?? '' ?>";
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    const aksi = urlParams.get('aksi');
+    const count = urlParams.get('count');
+    const msg = urlParams.get('msg');
     
-    if(status==="sukses"){
-        if(aksi==="generate"){
+    if(status === "sukses"){
+        if(aksi === "generate"){
             showToast(`Berhasil generate ${count} jadwal otomatis! 🎉`, "success");
+        } else if(aksi === "hapus"){
+            showToast("✅ Jadwal berhasil dihapus!", "success");
+        } else if(aksi === "edit"){
+            showToast("✅ Jadwal berhasil diupdate!", "success");
         } else {
-            showToast("Berhasil melakukan " + aksi + " jadwal!", "success");
-        }
-    } else if(status==="gagal"){
-        if(aksi==="hapus_booking"){
-            showToast("Tidak bisa menghapus! Jadwal sudah terhubung dengan booking. 🔒", "danger");
-        } else if(aksi==="validasi"){
-            showToast("Jam selesai harus lebih besar dari jam mulai!", "danger");
-        } else {
-            showToast("Gagal melakukan " + aksi + " jadwal!", "danger");
-        }
-    }
-});
-</script>
+            showToast("✅ Berhasil melakukan " + aksi + " jadwal!", "success");
+            </script>
